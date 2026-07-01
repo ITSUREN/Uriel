@@ -1,3 +1,4 @@
 devjournal/
 .env
 .venv
+__pycache__
