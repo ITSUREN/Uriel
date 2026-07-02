@@ -1,4 +1,5 @@
 #backend/app/index/indexer.py
+from email.mime import text
 import os
 from datetime import datetime
 
@@ -36,6 +37,9 @@ class Indexer:
                 else:
                     continue
 
+                if text is None:
+                    continue  # parser already logged why
+                
                 self.index_document(path, file, text)
 
     def index_document(self, path:str, filename:str, text:str):
