@@ -10,7 +10,8 @@ class SearchService:
         self.ranking_factory = ranking_factory
 
     def search(self, query: str, algorithm: RankingAlgorithmType, top_k: int=10) -> list[SearchResult]:
-        query_terms = self.preprocessor.preprocess(query)
+        processed_query = self.preprocessor.process(query)
+        query_terms = processed_query.terms
         
         ranker = self.ranking_factory.create(algorithm)
         documents = self.doc_repo.all()
