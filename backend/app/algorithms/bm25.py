@@ -9,7 +9,7 @@ class BM25Ranking(RankingAlgorithm):
         self.k1 = k1
         self.b = b
 
-    def score(self, query_terms: list[str], index, documents, top_k=10)-> list[SearchResult]:
+    def score(self, query_terms: list[str], index, documents, top_k=10) -> list[SearchResult]:
         n_docs = len(documents)
         if n_docs == 0:
             return []
