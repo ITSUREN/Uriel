@@ -1,16 +1,18 @@
 [project]
-name = "project"
+name = "uriel"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
     "fastapi>=0.138.2",
+    "nltk>=3.9.4",
     "numpy>=2.2.6",
     "pydantic>=2.13.4",
     "pymupdf>=1.28.0",
     "pytest>=9.1.1",
     "python-dotenv>=1.2.2",
     "rich>=15.0.0",
+    "spacy>=3.8.14",
     "uvicorn>=0.49.0",
 ]
