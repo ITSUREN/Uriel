@@ -1,3 +1,4 @@
+#backend/app/models/posting.py
 from dataclasses import dataclass
 
 @dataclass

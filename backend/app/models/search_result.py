@@ -1,3 +1,4 @@
+#backend/app/models/search_result.py
 from dataclasses import dataclass
 
 @dataclass

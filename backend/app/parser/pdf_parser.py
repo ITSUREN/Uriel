@@ -1,3 +1,4 @@
+#backend/app/parser/pdf_parser.py
 import fitz
 
 class PDFParser:

@@ -1,3 +1,4 @@
+#backend/app/index/indexer.py
 import os
 from datetime import datetime
 
@@ -6,14 +7,15 @@ from backend.app.index.inverted_index import InvertedIndex
 from backend.app.models.document import Document
 from backend.app.models.posting import Posting
 
-from backend.app.preprocessing.tokenizer import Tokenizer
+from backend.app.preprocessing.config import PreprocessingConfig
+from backend.app.preprocessing.preprocessing_factory import PreprocessingFactory
 from backend.app.parser.pdf_parser import PDFParser
 from backend.app.parser.txt_parser import TXTParser
 
 class Indexer:
-    def __init__(self):
+    def __init__(self, config: PreprocessingConfig = PreprocessingConfig()):
         self.index : InvertedIndex = InvertedIndex()
-        self.tokenizer : Tokenizer = Tokenizer()
+        self.preprocessor = PreprocessingFactory.create(config)
 
         self.pdf_parser : PDFParser = PDFParser()
         self.txt_parser : TXTParser = TXTParser()
@@ -40,7 +42,8 @@ class Indexer:
         doc_id = self.doc_id_counter
         self.doc_id_counter += 1
 
-        tokens = self.tokenizer.tokenize(text)
+        processed_doc = self.preprocessor.process(text)
+        tokens = processed_doc.terms
 
         self.documents[doc_id] = Document(
             doc_id = doc_id,

@@ -1,3 +1,4 @@
+#backend/app/main.py
 import os
 from backend.app.index.indexer import Indexer
 from dotenv import load_dotenv

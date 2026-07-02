@@ -1,3 +1,4 @@
+#backend/app/index/inverted_index.py
 from collections import defaultdict
 from backend.app.models.posting import Posting
 
