@@ -6,7 +6,6 @@ from backend.app.api.deps import get_search_service
 
 router = APIRouter(prefix="/search", tags=["search"])
 
-@router.post("", response_model=list[SearchResponse])
 def _to_out(results, docs):
     return [
         SearchResponse(

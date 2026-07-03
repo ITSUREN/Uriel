@@ -1,6 +1,7 @@
 #backend/app/services/search_service.py
 from backend.app.algorithms.ranking_factory import RankingFactory, RankingAlgorithmType
 from backend.app.models.search_result import SearchResult
+from backend.app.services.config_service import DEFAULT_CONFIG
 from backend.query_expansion.rocchio import RocchioFeedback, RocchioParams
 from backend.query_expansion.wordnet_expansion import WordNetExpander
 
@@ -16,19 +17,23 @@ class SearchService:
         return config["ranking"]["bm25"] if algorithm == RankingAlgorithmType.BM25 else {}
     
     def _base_query_weights(self, query:str, expand: bool, config) -> dict[str, float]:
+        config = config or DEFAULT_CONFIG
         query_terms = self.preprocessor.process(query).terms
         if not expand:
             return {term: query_terms.count(term) *1.0 for term in set(query_terms)}
         
         query_expander = config["query_expansion"]
-        expander = WordNetExpander(query_expander["wordnet_max_synonyms_per_term"], query_expander["wordnet_max_synonyms_per_query"])
+        expander = WordNetExpander(
+            query_expander["wordnet_max_synonyms_per_term"],
+            query_expander["wordnet_synonym_weight"],
+        )
         return expander.expand(query_terms, normalize = lambda s: self.preprocessor.process(s).terms)
 
     def search(self, query: str, algorithm = None, top_k = None, expand_query: bool | None = None) -> list[SearchResult]:
-        config = self.config_repo.get()
+        config = self.config_repo.get() or DEFAULT_CONFIG
         algorithm = algorithm or RankingAlgorithmType(config["ranking"]["default_algorithm"])
         top_k = top_k or config["ranking"]["default_top_k"]
-        expand = config["query_expansion"]["wordne_enabled"] if expand_query is None else expand_query
+        expand = config["query_expansion"]["wordnet_enabled"] if expand_query is None else expand_query
 
         query_weights = self._base_query_weights(query, expand, config)        
         ranker = self.ranking_factory.create(algorithm, **self._algorithm_kwargs(algorithm, config))
@@ -39,7 +44,7 @@ class SearchService:
         return results
     
     def search_with_feedback(self, query: str, relevant_doc_ids: list[int], non_relevant_doc_ids: list[int], algorithm = None, top_k = None) -> list[SearchResult]:
-        config = self.config_repo.get()
+        config = self.config_repo.get() or DEFAULT_CONFIG
         algorithm = algorithm or RankingAlgorithmType(config["ranking"]["default_algorithm"])
         top_k = top_k or config["ranking"]["default_top_k"]
 

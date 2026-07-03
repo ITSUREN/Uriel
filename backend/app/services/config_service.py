@@ -7,7 +7,7 @@ from backend.app.storage.base import ConfigRepository, DirectoryRepository
 DEFAULT_CONFIG = {
     "preprocessing": asdict(PreprocessingConfig()),
     "ranking" : {
-        "default_algorithm": "tfidf",
+        "default_algorithm": "bm25",
         "default_top_k": 10,
         "bm25": {
             "k1": 1.5,
@@ -15,7 +15,7 @@ DEFAULT_CONFIG = {
         },
     },
     "query_expansion": {
-        "wordnet_enable": False, #opt-in but doesn't have sense disambiguation yet
+        "wordnet_enabled": False, #opt-in but doesn't have sense disambiguation yet
         "wordnet_max_synonyms_per_term": 2,
         "wordnet_synonym_weight": 0.5,
         "rocchio": {
