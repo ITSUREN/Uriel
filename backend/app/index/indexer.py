@@ -72,3 +72,7 @@ class Indexer:
                 positions = positions
             )
             self.index_repo.add_posting(term, [posting])
+
+        # Adding to the forward index, TODO: consider putting this inside the loop above to avoid iterating twice, but it may be cleaner this way
+        term_freqs = {term: len(positions) for term, positions in positions_map.items()}
+        self.index_repo.add_document_terms(doc_id, term_freqs)
