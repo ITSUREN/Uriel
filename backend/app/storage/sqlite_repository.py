@@ -1,3 +1,4 @@
+#backend/app/storage/sqlite_repository.py
 import json
 import sqlite3
 from datetime import datetime
@@ -50,7 +51,7 @@ class SQLiteDocumentRepository(DocumentRepository):
             last_modified=datetime.fromisoformat(row[4])
         )
     
-def SQLiteIndexRepository(IndexRepository):
+class SQLiteIndexRepository(IndexRepository):
     def __init__(self, conn: sqlite3.Connection):
         self.conn = conn
 
