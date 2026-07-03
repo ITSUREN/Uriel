@@ -1,5 +1,6 @@
 #backend/app/services/config_service.py
 from pathlib import Path
+import copy
 from dataclasses import asdict
 from backend.app.preprocessing.config import PreprocessingConfig
 from backend.app.storage.base import ConfigRepository, DirectoryRepository
@@ -37,7 +38,7 @@ class ConfigService:
         self.allowed_root = Path(allowed_root).resolve() if allowed_root else None
 
     def get(self) -> dict:
-        return self.config_repo.get() or DEFAULT_CONFIG
+        return copy.deepcopy(self.config_repo.get() or DEFAULT_CONFIG)
     
     def update_preprocessing(self, updates: dict) -> dict:
         current = self.get()

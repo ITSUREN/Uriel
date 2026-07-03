@@ -2,8 +2,8 @@
 from backend.app.algorithms.ranking_factory import RankingFactory, RankingAlgorithmType
 from backend.app.models.search_result import SearchResult
 from backend.app.services.config_service import DEFAULT_CONFIG
-from backend.query_expansion.rocchio import RocchioFeedback, RocchioParams
-from backend.query_expansion.wordnet_expansion import WordNetExpander
+from backend.app.query_expansion.rocchio import RocchioFeedback, RocchioParams
+from backend.app.query_expansion.wordnet_expansion import WordNetExpander
 
 class SearchService:
     def __init__(self, doc_repo, index_repo, preprocessor, config_repo, ranking_factory = RankingFactory):
