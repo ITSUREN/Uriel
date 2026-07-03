@@ -1,23 +1,27 @@
 # backend/app/main.py
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from backend.app.api import search, index, config as config_api
+from backend.app.api.deps import get_repositories, get_index_service
 from backend.app.config.settings import get_settings
-from backend.app.api.index import router as index_router
-from backend.app.api.search import router as search_router
-from backend.app.index.indexer import Indexer
-from backend.app.services.index_service import IndexService
-from backend.app.storage.factory import build_repositories
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    settings = get_settings()
-    app.state.doc_repo, app.state.index_repo = build_repositories(settings.db_path)
-
-    if settings.auto_index_on_startup and not app.state.doc_repo.all():
-        IndexService(Indexer(app.state.doc_repo, app.state.index_repo)).build(settings.data_dir)
-
+    get_repositories()  # warms the shared cache: connects, applies schema, seeds default dir
+    if get_settings().auto_index_on_startup:
+        get_index_service().build()
     yield
 
 app = FastAPI(title="Uriel Search Engine", version="0.1.0", lifespan=lifespan)
-app.include_router(index_router)
-app.include_router(search_router)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:8080"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.include_router(search.router)
+app.include_router(index.router)
+app.include_router(config_api.router)
