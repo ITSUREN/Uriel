@@ -4,8 +4,9 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     db_path: str = "./backend/app/data/uriel.db"
-    data_dir: str = "data/documents"
+    data_dir: str = "./data/documents"
     default_algorithm: str = "bm25"
+    auto_index_on_startup: bool = True
 
     class Config:
         env_file = ".env"
