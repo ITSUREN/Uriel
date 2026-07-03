@@ -1,8 +1,8 @@
 #backend/app/storage/sqlite_repository.py
 import json
 import sqlite3
-from datetime import datetime
-from .base import DocumentRepository, IndexRepository
+from datetime import datetime, timezone
+from .base import DocumentRepository, IndexRepository, ConfigRepository, DirectoryRepository
 
 from backend.app.models.document import Document
 from backend.app.models.posting import Posting
@@ -57,23 +57,97 @@ class SQLiteIndexRepository(IndexRepository):
 
     def add_posting(self, term: str, postings: list[Posting]) -> None:
         self.conn.executemany(
-            """INSERT OR REPLACE INTO postings (term, doc_id, term_frequency, positions) VALUES (?, ?, ?, ?)""",
-            [(term, posting.doc_id, posting.term_frequency, json.dumps(posting.positions)) for posting in postings],
+            """INSERT OR REPLACE INTO postings (term, doc_id, term_frequency, positions)
+               VALUES (?, ?, ?, ?)""",
+            [(term, p.doc_id, p.term_frequency, json.dumps(p.positions)) for p in postings],
         )
         self.conn.commit()
 
     def get_postings(self, term: str) -> list[Posting]:
         rows = self.conn.execute(
-            "SELECT doc_id, term_frequency, positions from postings WHERE term = ?",
-            (term,)
+            "SELECT doc_id, term_frequency, positions FROM postings WHERE term = ?", (term,)
         ).fetchall()
-        return [Posting(doc_id=row[0], term_frequency=row[1], positions=json.loads(row[2])) for row in rows]
-    
+        return [Posting(doc_id=r[0], term_frequency=r[1], positions=json.loads(r[2])) for r in rows]
+
     def vocabulary_size(self) -> int:
         row = self.conn.execute("SELECT COUNT(DISTINCT term) FROM postings").fetchone()
         return row[0]
-    
+
+    def document_frequency(self, term: str) -> int:
+        row = self.conn.execute("SELECT COUNT(*) FROM postings WHERE term = ?", (term,)).fetchone()
+        return row[0]
+
+    def add_document_terms(self, doc_id: int, term_freqs: dict[str, int]) -> None:
+        self.conn.executemany(
+            "INSERT OR REPLACE INTO document_terms (doc_id, term, term_frequency) VALUES (?, ?, ?)",
+            [(doc_id, term, tf) for term, tf in term_freqs.items()],
+        )
+        self.conn.commit()
+
+    def get_document_terms(self, doc_id: int) -> dict[str, int]:
+        rows = self.conn.execute(
+            "SELECT term, term_frequency FROM document_terms WHERE doc_id = ?", (doc_id,)
+        ).fetchall()
+        return {row[0]: row[1] for row in rows}
+
     def clear(self) -> None:
         self.conn.execute("DELETE FROM postings")
+        self.conn.execute("DELETE FROM document_terms")
         self.conn.execute("DELETE FROM documents")
+        self.conn.commit()
+
+class SQLiteConfigRepository(ConfigRepository):
+    def __init__(self, conn: sqlite3.Connection):
+        self.conn = conn
+
+    def get(self) -> dict | None:
+        row = self.conn.execute("SELECT value FROM app_config WHERE key = 'app_config'").fetchone()
+        return json.loads(row[0]) if row else None
+
+    def save(self, config: dict) -> None:
+        self.conn.execute(
+            "INSERT OR REPLACE INTO app_config (key, value) VALUES ('app_config', ?)",
+            (json.dumps(config),),
+        )
+        self.conn.commit()
+
+
+class SQLiteDirectoryRepository(DirectoryRepository):
+    def __init__(self, conn: sqlite3.Connection):
+        self.conn = conn
+
+    def list(self) -> list[dict]:
+        rows = self.conn.execute(
+            "SELECT id, path, is_default FROM watched_directories ORDER BY id"
+        ).fetchall()
+        return [{
+            "id": r[0], 
+            "path": r[1], 
+            "is_default": bool(r[2])
+        } for r in rows]
+
+    def add(self, path: str) -> dict:
+        cur = self.conn.execute(
+            "INSERT INTO watched_directories (path, is_default, added_at) VALUES (?, 0, ?)",
+            (path, datetime.now(timezone.utc).isoformat()),
+        )
+        self.conn.commit()
+        return {
+            "id": cur.lastrowid, 
+            "path": path, 
+            "is_default": False
+        }
+
+    def delete(self, dir_id: int) -> None:
+        row = self.conn.execute(
+            "SELECT is_default FROM watched_directories WHERE id = ?", (dir_id,)
+        ).fetchone()
+        
+        if row is None:
+            raise ValueError(f"No such directory id: {dir_id}")
+        
+        if row[0]:
+            raise PermissionError("Cannot delete the default directory")
+        
+        self.conn.execute("DELETE FROM watched_directories WHERE id = ?", (dir_id,))
         self.conn.commit()
