@@ -1,6 +1,8 @@
 #backend/app/api/deps.py
 from functools import lru_cache
 from backend.app.config.settings import get_settings
+from backend.app.preprocessing.config import PreprocessingConfig
+from backend.app.services.config_service import ConfigService
 from backend.app.storage.factory import build_repositories
 from backend.app.index.indexer import Indexer
 from backend.app.services.index_service import IndexService
@@ -10,17 +12,27 @@ from backend.app.preprocessing.preprocessing_factory import PreprocessingFactory
 @lru_cache
 def _repos():
     settings = get_settings()
-    return build_repositories(settings.db_path)
+    return build_repositories(settings.db_path, settings.data_dir)
 
 @lru_cache
-def _indexer() -> Indexer:
-    doc_repo, index_repo = _repos()
-    return Indexer(doc_repo, index_repo)
+def get_repositories():
+    settings = get_settings()
+    return build_repositories(settings.db_path, settings.data_dir)
+
+def _current_preprocessing_config(config_repo) -> PreprocessingConfig:
+    _, _, _, directory_repo = get_repositories()
+    return PreprocessingConfig(**ConfigService(config_repo, directory_repo).get()["preprocessing"])
+
+def get_config_service() -> ConfigService:
+    _, _, config_repo, directory_repo = get_repositories()
+    return ConfigService(config_repo, directory_repo, allowed_root=get_settings().allowed_root)
 
 def get_index_service() -> IndexService:
-    return IndexService(_indexer())
+    doc_repo, index_repo, config_repo, directory_repo = get_repositories()
+    indexer = Indexer(doc_repo, index_repo, _current_preprocessing_config(config_repo))
+    return IndexService(indexer, directory_repo)
 
 def get_search_service() -> SearchService:
-    doc_repo, index_repo = _repos()
-    preprocessor = _indexer().preprocessor
-    return SearchService(doc_repo, index_repo, preprocessor)
+    doc_repo, index_repo, config_repo, directory_repo = get_repositories()
+    preprocessor = PreprocessingFactory.create(_current_preprocessing_config(config_repo))
+    return SearchService(doc_repo, index_repo, preprocessor, config_repo)
