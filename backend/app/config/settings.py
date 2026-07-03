@@ -7,6 +7,7 @@ class Settings(BaseSettings):
     data_dir: str = "./data/documents"
     default_algorithm: str = "bm25"
     auto_index_on_startup: bool = True
+    allowed_root: str | None = None
 
     class Config:
         env_file = ".env"
