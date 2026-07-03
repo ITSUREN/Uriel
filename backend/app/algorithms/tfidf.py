@@ -1,25 +1,26 @@
 #backend/app/algorithms/tfidf.py
 import math
 from collections import defaultdict
+
+from backend.app.models.document import Document
+from backend.app.storage.base import IndexRepository
 from .base import RankingAlgorithm
 from backend.app.models.search_result import SearchResult
 
 class TFIDFRanking(RankingAlgorithm):
     """TF-IDF ranking algorithm implementation"""
 
-    def score(self, query_terms: list[str], index, documents, top_k: int = 10) -> list[SearchResult]:
+    def score(self, query_weights: dict[str, float], index_repo: IndexRepository, documents: dict[int, Document], top_k: int = 10) -> list[SearchResult]:
         n_docs = len(documents)
         if n_docs == 0:
             return []
         
         scores: dict[int, float] = defaultdict(float)
-        # conversion of query_terms to a set to avoid duplicate scoring for the same term
-        seen_terms = set(query_terms)
 
-        for term in seen_terms:
-            postings = index.get_postings(term)
-
+        for term, q_weight in query_weights.items():
+            postings = index_repo.get_postings(term)
             df = len(postings)
+
             if df == 0:
                 continue
             # using smooothed idf, always positive
@@ -27,7 +28,7 @@ class TFIDFRanking(RankingAlgorithm):
 
             for posting in postings:
                 tf_weight = 1 + math.log(posting.term_frequency)
-                scores[posting.doc_id] += tf_weight * idf
+                scores[posting.doc_id] += q_weight * tf_weight * idf
 
         
         # Normalize scores by document length (crude cosine-ish normalization)
