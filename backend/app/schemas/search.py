@@ -6,6 +6,14 @@ class SearchRequest(BaseModel):
     query: str
     algorithm: RankingAlgorithmType = RankingAlgorithmType.BM25
     top_k: int = 10
+    expand_query: bool | None = None  # None = use configured default
+
+class FeedbackRequest(BaseModel):
+    query: str
+    relevant_doc_ids: list[int]
+    non_relevant_doc_ids: list[int] = []
+    algorithm: RankingAlgorithmType | None = None
+    top_k: int | None = None
 
 class SearchResponse(BaseModel):
     doc_id: int
