@@ -39,8 +39,7 @@ class SearchService:
         ranker = self.ranking_factory.create(algorithm, **self._algorithm_kwargs(algorithm, config))
         documents = self.doc_repo.all()
         results = ranker.score(query_weights, self.index_repo, documents, top_k)
-        for result in results:
-            result.snippet = self._make_snippet(documents[result.doc_id])
+        self._enrich(results, documents)
         return results
     
     def search_with_feedback(self, query: str, relevant_doc_ids: list[int], non_relevant_doc_ids: list[int], algorithm = None, top_k = None) -> list[SearchResult]:
@@ -56,9 +55,15 @@ class SearchService:
 
         ranker = self.ranking_factory.create(algorithm, **self._algorithm_kwargs(algorithm, config))
         results = ranker.score(expanded_query_weights, self.index_repo, documents, top_k)
-        for result in results:
-            result.snippet = self._make_snippet(documents[result.doc_id])
+        self._enrich(results, documents)
         return results
-    
+
+    def _enrich(self, results: list[SearchResult], documents: list) -> None:
+        for result in results:
+            doc = documents[result.doc_id]
+            result.title = doc.title
+            result.path = doc.path
+            result.snippet = self._make_snippet(doc)
+
     def _make_snippet(self, doc) -> str:
         return doc.title  # placeholder — real snippet needs stored raw text or positions+source lookup

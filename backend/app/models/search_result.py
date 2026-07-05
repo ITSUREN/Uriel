@@ -6,3 +6,5 @@ class SearchResult:
     doc_id: int
     score: float
     snippet: str
+    title: str = ""
+    path: str = ""
