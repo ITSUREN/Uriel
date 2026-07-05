@@ -1,0 +1,6 @@
+Cardiovascular diseases (CVDs) remain a leading cause of mortality globally, prompting extensive research into early detection methods that can improve patient outcomes through timely intervention. 
+Recent advances have focused on the integration of biomarkers, imaging technologies, and machine learning algorithms to identify risk factors before clinical symptoms become severe. 
+For example, blood-based biomarkers such as high-sensitivity C-reactive protein and troponins are increasingly used to detect inflammation and cardiac stress, while imaging techniques like echocardiography and CT angiography provide detailed visualization of heart structures. 
+In addition, predictive models that analyze large datasets from electronic health records can identify individuals at high risk based on patterns in lifestyle, genetics, and medical history. 
+These approaches enable more personalized treatment strategies and preventive care. However, challenges remain in ensuring the affordability, accessibility, and accuracy of these technologies across different populations. 
+Ongoing research continues to refine these tools, aiming to balance early detection with cost-effectiveness and broad applicability in healthcare systems.
