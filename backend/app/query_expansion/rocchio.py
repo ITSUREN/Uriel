@@ -48,5 +48,5 @@ class RocchioFeedback:
                 for term, weight in self._doc_vector(doc_id, n_docs).items():
                     new_query_weights[term] = new_query_weights.get(term, 0.0) - gamma_factor * weight
 
-        return {term: w for term, w in new_query_weights.items()}
+        return {term: w for term, w in new_query_weights.items() if w > 0.0}
         
