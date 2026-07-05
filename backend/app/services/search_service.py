@@ -57,6 +57,30 @@ class SearchService:
         results = ranker.score(expanded_query_weights, self.index_repo, documents, top_k)
         self._enrich(results, documents)
         return results
+    
+    def related(self, doc_id: int, algorithm = None, top_k = 5) -> list[SearchResult]:
+        if self.doc_repo.get(doc_id) is None:
+            raise ValueError(f"Document with ID {doc_id} does not exist.")
+        
+        config = self.config_repo.get() or DEFAULT_CONFIG
+        algorithm = algorithm or RankingAlgorithmType(config["ranking"]["default_algorithm"])
+        
+        # The document's own term-frequency vector becomes the "query" — this is what
+        # makes it a content-based recommender rather than a hand-rolled similarity metric.
+        query_weights = self.index_repo.get_document_terms(doc_id)
+        if not query_weights:
+            return []  # no terms in the document, so no related docs
+        
+        ranker = self.ranking_factory.create(algorithm, **self._algorithm_kwargs(algorithm, config))
+        documents = self.doc_repo.all()
+
+         # Ask for one extra: the source document will almost always be its own top match
+        # (perfect self-similarity), so we drop it after scoring rather than filtering the
+        # postings beforehand (which would require special-casing the ranking algorithms).
+        raw_results = ranker.score(query_weights, self.index_repo, documents, top_k + 1)
+        results = [result for result in raw_results if result.doc_id != doc_id][:top_k]
+        self._enrich(results,documents)
+        return results
 
     def _enrich(self, results: list[SearchResult], documents: list) -> None:
         for result in results:

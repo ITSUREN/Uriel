@@ -46,3 +46,13 @@ class TestSystemEndToEnd:
         }).json()
 
         assert first[0]["score"] != second[0]["score"]
+
+    def test_related_documents_returns_list_response(self, client):
+        client.post("/index/build")
+        related = client.get("/documents/1/related?top_k=5")
+
+        assert related.status_code == 200
+        body = related.json()
+        assert isinstance(body, list)
+        assert body
+        assert all("doc_id" in item and "title" in item for item in body)

@@ -3,6 +3,7 @@ from functools import lru_cache
 from backend.app.config.settings import get_settings
 from backend.app.preprocessing.config import PreprocessingConfig
 from backend.app.services.config_service import ConfigService
+from backend.app.services.document_service import DocumentService
 from backend.app.storage.factory import build_repositories
 from backend.app.index.indexer import Indexer
 from backend.app.services.index_service import IndexService
@@ -36,3 +37,7 @@ def get_search_service() -> SearchService:
     doc_repo, index_repo, config_repo, directory_repo = get_repositories()
     preprocessor = PreprocessingFactory.create(_current_preprocessing_config(config_repo))
     return SearchService(doc_repo, index_repo, preprocessor, config_repo)
+
+def get_document_service() -> DocumentService:
+    doc_repo, index_repo, config_repo, directory_repo = get_repositories()
+    return DocumentService(doc_repo, directory_repo)
