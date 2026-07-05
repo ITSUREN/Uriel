@@ -1,6 +1,8 @@
 import { useState } from "react";
+import Header from "./components/Header/Header";
 import SearchBar from "./components/Search/SearchBar";
 import ResultsList from "./components/Results/ResultsList";
+import "./App.css";
 
 function App() {
   const [results, setResults] = useState(null);
@@ -8,16 +10,17 @@ function App() {
   const [loading, setLoading] = useState(false);
 
   return (
-    <div>
+    <div className="app">
+      <Header />
       <SearchBar
         onResults={setResults}
         onError={setError}
         onLoadingChange={setLoading}
       />
 
-      {loading && <p>Loading...</p>}
-      {error && <p>{error}</p>}
-      {results && <ResultsList results={results} />}
+      {loading && <p className="status-message">Searching...</p>}
+      {error && <p className="error-message">{error}</p>}
+      {!loading && !error && results && <ResultsList results={results} />}
     </div>
   );
 }

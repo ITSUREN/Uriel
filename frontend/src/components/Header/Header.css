@@ -1,0 +1,28 @@
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 2rem;
+  background-color: #1f2937;
+  color: #ffffff;
+}
+
+.header-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.settings-button {
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  color: #1f2937;
+  background-color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.settings-button:hover {
+  background-color: #e5e7eb;
+}

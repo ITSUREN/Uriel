@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { searchDocuments } from "../../services/api";
+import "./SearchBar.css";
 
 function SearchBar({ onResults, onError, onLoadingChange }) {
   const [query, setQuery] = useState("");
@@ -31,8 +32,9 @@ function SearchBar({ onResults, onError, onLoadingChange }) {
   };
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form className="search-form" onSubmit={handleSubmit}>
       <input
+        className="search-input"
         type="text"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
@@ -40,6 +42,7 @@ function SearchBar({ onResults, onError, onLoadingChange }) {
       />
 
       <select
+        className="search-algorithm"
         value={algorithm}
         onChange={(e) => setAlgorithm(e.target.value)}
       >
@@ -47,12 +50,13 @@ function SearchBar({ onResults, onError, onLoadingChange }) {
       </select>
 
       <input
+        className="search-topk"
         type="number"
         value={topK}
         onChange={(e) => setTopK(Number(e.target.value))}
       />
 
-      <label>
+      <label className="search-checkbox-label">
         <input
           type="checkbox"
           checked={expandQuery}
@@ -61,7 +65,9 @@ function SearchBar({ onResults, onError, onLoadingChange }) {
         Expand Query
       </label>
 
-      <button type="submit">Search</button>
+      <button className="search-button" type="submit">
+        Search
+      </button>
     </form>
   );
 }
