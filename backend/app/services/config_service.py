@@ -19,7 +19,7 @@ DEFAULT_CONFIG = {
         "wordnet_enabled": False, #opt-in but doesn't have sense disambiguation yet
         "wordnet_max_synonyms_per_term": 2,
         "wordnet_synonym_weight": 0.5,
-        "spelling_correction_enabled": True,
+        "spell_correction_enabled": True,
         "rocchio": {
             "alpha": 1.0,
             "beta": 0.75,
