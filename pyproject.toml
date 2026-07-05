@@ -17,3 +17,12 @@ dependencies = [
     "spacy>=3.8.14",
     "uvicorn>=0.49.0",
 ]
+
+[tool.pytest.ini_options]
+testpaths = ["backend/app/tests"]
+pythonpath = ["."]          # <-- add this: makes project root importable as `backend...`
+markers = [
+    "unit: isolated test of a single class/function",
+    "integration: multiple real modules composed, no HTTP layer",
+    "system: full API black-box test via TestClient",
+]
