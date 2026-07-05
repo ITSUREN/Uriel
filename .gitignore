@@ -2,4 +2,4 @@ devjournal/
 .env
 .venv
 __pycache__
-uriel.db
+uriel.db.pytest_cache/ 
