@@ -4,14 +4,16 @@ from backend.app.models.search_result import SearchResult
 from backend.app.services.config_service import DEFAULT_CONFIG
 from backend.app.query_expansion.rocchio import RocchioFeedback, RocchioParams
 from backend.app.query_expansion.wordnet_expansion import WordNetExpander
+from backend.app.query_expansion.spell_correction import SpellCorrector
 
 class SearchService:
-    def __init__(self, doc_repo, index_repo, preprocessor, config_repo, ranking_factory = RankingFactory):
+    def __init__(self, doc_repo, index_repo, preprocessor, config_repo, ranking_factory = RankingFactory, spell_corrector : SpellCorrector | None = None):
         self.doc_repo = doc_repo
         self.index_repo = index_repo
         self.config_repo = config_repo
         self.preprocessor = preprocessor
         self.ranking_factory = ranking_factory
+        self.spell_corrector = spell_corrector
 
     def _algorithm_kwargs(self, algorithm, config):
         return config["ranking"]["bm25"] if algorithm == RankingAlgorithmType.BM25 else {}
@@ -29,18 +31,25 @@ class SearchService:
         )
         return expander.expand(query_terms, normalize = lambda s: self.preprocessor.process(s).terms)
 
-    def search(self, query: str, algorithm = None, top_k = None, expand_query: bool | None = None) -> list[SearchResult]:
+    def search(self, query: str, algorithm = None, top_k = None, expand_query: bool | None = None) -> tuple[list[SearchResult], dict[str, str]]:
         config = self.config_repo.get() or DEFAULT_CONFIG
         algorithm = algorithm or RankingAlgorithmType(config["ranking"]["default_algorithm"])
         top_k = top_k or config["ranking"]["default_top_k"]
         expand = config["query_expansion"]["wordnet_enabled"] if expand_query is None else expand_query
+
+        terms = self.preprocessor.process(query).terms
+        corrections: dict[str, str] = {}
+        if config["query_expansion"].get("spell_correction_enabled", False) and self.spell_corrector:
+            corrections = self.spell_corrector.correct(terms, self.index_repo)
+            if corrections:
+                terms = [corrections.get(term, term) for term in terms]
 
         query_weights = self._base_query_weights(query, expand, config)        
         ranker = self.ranking_factory.create(algorithm, **self._algorithm_kwargs(algorithm, config))
         documents = self.doc_repo.all()
         results = ranker.score(query_weights, self.index_repo, documents, top_k)
         self._enrich(results, documents)
-        return results
+        return results, corrections
     
     def search_with_feedback(self, query: str, relevant_doc_ids: list[int], non_relevant_doc_ids: list[int], algorithm = None, top_k = None) -> list[SearchResult]:
         config = self.config_repo.get() or DEFAULT_CONFIG

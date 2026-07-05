@@ -89,6 +89,10 @@ class SQLiteIndexRepository(IndexRepository):
             "SELECT term, term_frequency FROM document_terms WHERE doc_id = ?", (doc_id,)
         ).fetchall()
         return {row[0]: row[1] for row in rows}
+    
+    def get_vocabulary(self) -> list[str]:
+        rows = self.conn.execute("SELECT DISTINCT term FROM postings").fetchall()
+        return [row[0] for row in rows]
 
     def clear(self) -> None:
         self.conn.execute("DELETE FROM postings")

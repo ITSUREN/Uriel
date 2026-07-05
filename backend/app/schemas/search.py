@@ -21,3 +21,7 @@ class SearchResponse(BaseModel):
     snippet: str
     title: str
     path: str
+
+class SearchResultsOut(BaseModel):
+    results: list[SearchResponse]
+    corrected_terms: dict[str, str] = {}
