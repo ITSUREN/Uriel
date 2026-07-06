@@ -4,14 +4,18 @@ from backend.app.models.search_result import SearchResult
 from backend.app.services.config_service import DEFAULT_CONFIG
 from backend.app.query_expansion.rocchio import RocchioFeedback, RocchioParams
 from backend.app.query_expansion.wordnet_expansion import WordNetExpander
+from backend.app.query_expansion.spell_correction import SpellCorrector
+from backend.app.services.snippet_service import SnippetBuilder
 
 class SearchService:
-    def __init__(self, doc_repo, index_repo, preprocessor, config_repo, ranking_factory = RankingFactory):
+    def __init__(self, doc_repo, index_repo, preprocessor, config_repo, ranking_factory = RankingFactory, spell_corrector : SpellCorrector | None = None):
         self.doc_repo = doc_repo
         self.index_repo = index_repo
         self.config_repo = config_repo
         self.preprocessor = preprocessor
         self.ranking_factory = ranking_factory
+        self.spell_corrector = spell_corrector
+        self.snippet_builder = SnippetBuilder(index_repo)
 
     def _algorithm_kwargs(self, algorithm, config):
         return config["ranking"]["bm25"] if algorithm == RankingAlgorithmType.BM25 else {}
@@ -29,18 +33,27 @@ class SearchService:
         )
         return expander.expand(query_terms, normalize = lambda s: self.preprocessor.process(s).terms)
 
-    def search(self, query: str, algorithm = None, top_k = None, expand_query: bool | None = None) -> list[SearchResult]:
+    def search(self, query: str, algorithm = None, top_k = None, expand_query: bool | None = None) -> tuple[list[SearchResult], dict[str, str]]:
         config = self.config_repo.get() or DEFAULT_CONFIG
         algorithm = algorithm or RankingAlgorithmType(config["ranking"]["default_algorithm"])
         top_k = top_k or config["ranking"]["default_top_k"]
         expand = config["query_expansion"]["wordnet_enabled"] if expand_query is None else expand_query
+        query_expansion_config = config["query_expansion"]
+        spelling_correction_enabled = query_expansion_config.get( "spelling_correction_enabled",  False)
+
+        terms = self.preprocessor.process(query).terms
+        corrections: dict[str, str] = {}
+        if spelling_correction_enabled and self.spell_corrector:
+            corrections = self.spell_corrector.correct(terms, self.index_repo)
+            if corrections:
+                terms = [corrections.get(term, term) for term in terms]
 
         query_weights = self._base_query_weights(query, expand, config)        
         ranker = self.ranking_factory.create(algorithm, **self._algorithm_kwargs(algorithm, config))
         documents = self.doc_repo.all()
         results = ranker.score(query_weights, self.index_repo, documents, top_k)
-        self._enrich(results, documents)
-        return results
+        self._enrich(results, set(query_weights.keys()))
+        return results, corrections
     
     def search_with_feedback(self, query: str, relevant_doc_ids: list[int], non_relevant_doc_ids: list[int], algorithm = None, top_k = None) -> list[SearchResult]:
         config = self.config_repo.get() or DEFAULT_CONFIG
@@ -55,7 +68,7 @@ class SearchService:
 
         ranker = self.ranking_factory.create(algorithm, **self._algorithm_kwargs(algorithm, config))
         results = ranker.score(expanded_query_weights, self.index_repo, documents, top_k)
-        self._enrich(results, documents)
+        self._enrich(results, set(expanded_query_weights.keys()))
         return results
     
     def related(self, doc_id: int, algorithm = None, top_k = 5) -> list[SearchResult]:
@@ -79,15 +92,20 @@ class SearchService:
         # postings beforehand (which would require special-casing the ranking algorithms).
         raw_results = ranker.score(query_weights, self.index_repo, documents, top_k + 1)
         results = [result for result in raw_results if result.doc_id != doc_id][:top_k]
-        self._enrich(results,documents)
+        # No user-typed query here — this is doc-similarity, not a text search — so there's
+        # nothing meaningful to highlight. Empty set makes SnippetBuilder fall back to a
+        # plain leading excerpt instead of trying to highlight the document's own top terms.
+        self._enrich(results, set())
         return results
 
-    def _enrich(self, results: list[SearchResult], documents: list) -> None:
+    def _enrich(self, results: list[SearchResult], query_terms: set[str]) -> None:
+        # Deliberately re-fetches WITH content here — doc_repo.all() (used for ranking, above)
+        # returns content-less Documents on purpose, so this can't reuse that dict.
+        docs_with_content = self.doc_repo.get_many([r.doc_id for r in results])
         for result in results:
-            doc = documents[result.doc_id]
+            doc = docs_with_content.get(result.doc_id)
+            if doc is None:
+                continue
             result.title = doc.title
             result.path = doc.path
-            result.snippet = self._make_snippet(doc)
-
-    def _make_snippet(self, doc) -> str:
-        return doc.title  # placeholder — real snippet needs stored raw text or positions+source lookup
+            result.snippet = self.snippet_builder.build(doc.content, query_terms)

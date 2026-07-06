@@ -1,6 +1,6 @@
+#backend/app/tests/unit/fakes.py
 from backend.app.storage.base import IndexRepository
 from backend.app.models.posting import Posting
-
 
 class FakeIndexRepo(IndexRepository):
     """
@@ -11,7 +11,6 @@ class FakeIndexRepo(IndexRepository):
     implemented — an interface change breaks this fake loudly instead of
     letting it silently drift out of sync with the real repository.
     """
-
     def __init__(self, postings_by_term: dict[str, list[Posting]] | None = None,
                  doc_terms: dict[int, dict[str, int]] | None = None):
         self._postings = postings_by_term or {}
@@ -19,6 +18,10 @@ class FakeIndexRepo(IndexRepository):
 
     def add_posting(self, term: str, postings: list[Posting]) -> None:
         self._postings.setdefault(term, []).extend(postings)
+
+    def add_postings_bulk(self, entries: list[tuple[str, list[Posting]]]) -> None:
+        for term, postings in entries:
+            self.add_posting(term, postings)
 
     def get_postings(self, term: str) -> list[Posting]:
         return self._postings.get(term, [])
@@ -38,3 +41,6 @@ class FakeIndexRepo(IndexRepository):
 
     def get_document_terms(self, doc_id: int) -> dict[str, int]:
         return self._doc_terms.get(doc_id, {})
+
+    def get_vocabulary(self) -> list[str]:
+        return list(self._postings.keys())

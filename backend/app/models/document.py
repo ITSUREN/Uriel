@@ -9,3 +9,4 @@ class Document:
     title: str
     length: int
     last_modified: datetime
+    content: str = ""  
