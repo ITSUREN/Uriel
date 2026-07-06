@@ -1,6 +1,7 @@
 #backend/app/services/search_service.py
 from backend.app.algorithms.ranking_factory import RankingFactory, RankingAlgorithmType
 from backend.app.models.search_result import SearchResult
+from backend.app.parser.content_provider import ContentProvider
 from backend.app.services.config_service import DEFAULT_CONFIG
 from backend.app.query_expansion.rocchio import RocchioFeedback, RocchioParams
 from backend.app.query_expansion.wordnet_expansion import WordNetExpander
@@ -8,14 +9,17 @@ from backend.app.query_expansion.spell_correction import SpellCorrector
 from backend.app.services.snippet_service import SnippetBuilder
 
 class SearchService:
-    def __init__(self, doc_repo, index_repo, preprocessor, config_repo, ranking_factory = RankingFactory, spell_corrector : SpellCorrector | None = None):
+    def __init__(self, doc_repo, index_repo, preprocessor, config_repo,
+                 content_provider: ContentProvider,
+                 ranking_factory=RankingFactory,
+                 spell_corrector: SpellCorrector | None = None):
         self.doc_repo = doc_repo
         self.index_repo = index_repo
         self.config_repo = config_repo
         self.preprocessor = preprocessor
         self.ranking_factory = ranking_factory
         self.spell_corrector = spell_corrector
-        self.snippet_builder = SnippetBuilder(index_repo)
+        self.snippet_builder = SnippetBuilder(index_repo, content_provider)
 
     def _algorithm_kwargs(self, algorithm, config):
         return config["ranking"]["bm25"] if algorithm == RankingAlgorithmType.BM25 else {}
@@ -99,8 +103,6 @@ class SearchService:
         return results
 
     def _enrich(self, results: list[SearchResult], query_terms: set[str]) -> None:
-        # Deliberately re-fetches WITH content here — doc_repo.all() (used for ranking, above)
-        # returns content-less Documents on purpose, so this can't reuse that dict.
         docs_with_content = self.doc_repo.get_many([r.doc_id for r in results])
         for result in results:
             doc = docs_with_content.get(result.doc_id)
@@ -108,4 +110,4 @@ class SearchService:
                 continue
             result.title = doc.title
             result.path = doc.path
-            result.snippet = self.snippet_builder.build(doc.content, query_terms)
+            result.snippet = self.snippet_builder.build(doc.path, query_terms)

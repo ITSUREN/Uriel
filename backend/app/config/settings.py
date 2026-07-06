@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     default_algorithm: str = "bm25"
     auto_index_on_startup: bool = True
     allowed_root: str | None = None
-
+    pdf_max_pages: int | None = None  # None = no limit; set e.g. 5000 to skip absurd files
     class Config:
         env_file = ".env"
 
