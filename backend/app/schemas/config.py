@@ -55,6 +55,7 @@ class QueryExpansionConfigOut(BaseModel):
     wordnet_enabled: bool
     wordnet_max_synonyms_per_term: int
     wordnet_synonym_weight: float
+    spelling_correction_enabled: bool
     rocchio: RocchioConfigOut
 
 class QueryExpansionConfigUpdate(BaseModel):

@@ -19,6 +19,10 @@ class FakeIndexRepo(IndexRepository):
     def add_posting(self, term: str, postings: list[Posting]) -> None:
         self._postings.setdefault(term, []).extend(postings)
 
+    def add_postings_bulk(self, entries: list[tuple[str, list[Posting]]]) -> None:
+        for term, postings in entries:
+            self.add_posting(term, postings)
+
     def get_postings(self, term: str) -> list[Posting]:
         return self._postings.get(term, [])
 

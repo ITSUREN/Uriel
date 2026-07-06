@@ -39,14 +39,11 @@ class SearchService:
         top_k = top_k or config["ranking"]["default_top_k"]
         expand = config["query_expansion"]["wordnet_enabled"] if expand_query is None else expand_query
         query_expansion_config = config["query_expansion"]
-        spell_correction_enabled = query_expansion_config.get(
-            "spell_correction_enabled",
-            query_expansion_config.get("spelling_correction_enabled", False),
-        )
+        spelling_correction_enabled = query_expansion_config.get( "spelling_correction_enabled",  False)
 
         terms = self.preprocessor.process(query).terms
         corrections: dict[str, str] = {}
-        if spell_correction_enabled and self.spell_corrector:
+        if spelling_correction_enabled and self.spell_corrector:
             corrections = self.spell_corrector.correct(terms, self.index_repo)
             if corrections:
                 terms = [corrections.get(term, term) for term in terms]

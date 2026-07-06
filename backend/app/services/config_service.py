@@ -19,7 +19,7 @@ DEFAULT_CONFIG = {
         "wordnet_enabled": False, #opt-in but doesn't have sense disambiguation yet
         "wordnet_max_synonyms_per_term": 2,
         "wordnet_synonym_weight": 0.5,
-        "spell_correction_enabled": True,
+        "spelling_correction_enabled": True,
         "rocchio": {
             "alpha": 1.0,
             "beta": 0.75,
@@ -78,7 +78,7 @@ class ConfigService:
             try:
                 resolved.relative_to(self.allowed_root)
             except ValueError:
-                raise DirectoryValidationError(f"Directory must be under the mounter root: {self.allowed_root}")
+                raise DirectoryValidationError(f"Directory must be under the mounted root: {self.allowed_root}")
         return self.directory_repo.add(str(resolved))
     
     def remove_directory(self, dir_id: int) -> None:

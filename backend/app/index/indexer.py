@@ -1,9 +1,6 @@
 #backend/app/index/indexer.py
-from email.mime import text
 import os
 from datetime import datetime
-
-from backend.app.index.inverted_index import InvertedIndex
 
 from backend.app.models.document import Document
 from backend.app.models.posting import Posting
@@ -75,5 +72,5 @@ class Indexer:
             self.index_repo.add_posting(term, [posting])
 
         # Adding to the forward index, TODO: consider putting this inside the loop above to avoid iterating twice, but it may be cleaner this way
-        term_freqs = {term: len(positions) for term, positions in positions_map.items()}
-        self.index_repo.add_document_terms(doc_id, term_freqs)
+        entries = [(term, [Posting(doc_id=doc_id, term_frequency=len(positions), positions=positions)]) for term, positions in positions_map.items()]
+        self.index_repo.add_postings_bulk(entries)

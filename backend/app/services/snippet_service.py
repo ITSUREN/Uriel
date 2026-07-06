@@ -53,7 +53,7 @@ class SnippetBuilder:
         # Select the best chunk
         if scored_chunks[best_idx].score == 0:
             # no chunk matched at all (e.g. a filename-only query): just show the start.
-            snippet = self._highlight(content[:SNIPPET_TARGET_LENGTH], term_weights)
+            return self._highlight(content[:SNIPPET_TARGET_LENGTH], term_weights)
 
         window_text, window_start, window_end = self._expand_window(chunks, best_idx)
         prefix = "..." if window_start > 0 else ""
@@ -97,9 +97,12 @@ class SnippetBuilder:
         return text, window_start, window_end
     
     def _highlight(self, text: str, term_weights: dict[str, float]) -> str:
-        # Escape FIRST, then insert <mark> tags — see security note below.
         escaped = html.escape(text)
-        for term in sorted(term_weights, key=len, reverse=True):  # longest first avoids partial-inside-partial overlaps
-            pattern = re.compile(re.escape(html.escape(term)), re.IGNORECASE)
-            escaped = pattern.sub(lambda m: f"<mark>{m.group()}</mark>", escaped)
-        return escaped
+        terms_sorted = sorted(term_weights, key=len, reverse=True)
+        if not terms_sorted:
+            return escaped
+        pattern = re.compile(
+            "|".join(re.escape(html.escape(t)) for t in terms_sorted),
+            re.IGNORECASE,
+        )
+        return pattern.sub(lambda m: f"<mark>{m.group()}</mark>", escaped)

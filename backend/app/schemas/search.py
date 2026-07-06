@@ -4,8 +4,8 @@ from backend.app.algorithms.ranking_factory import RankingAlgorithmType
 
 class SearchRequest(BaseModel):
     query: str
-    algorithm: RankingAlgorithmType = RankingAlgorithmType.BM25
-    top_k: int = 10
+    algorithm: RankingAlgorithmType | None = None
+    top_k: int | None = None
     expand_query: bool | None = None  # None = use configured default
 
 class FeedbackRequest(BaseModel):

@@ -80,13 +80,21 @@ class SQLiteIndexRepository(IndexRepository):
     def __init__(self, conn: sqlite3.Connection):
         self.conn = conn
 
-    def add_posting(self, term: str, postings: list[Posting]) -> None:
+    def add_postings_bulk(self, entries: list[tuple[str, list[Posting]]]) -> None:
+        rows = [
+            (term, p.doc_id, p.term_frequency, json.dumps(p.positions))
+            for term, postings in entries
+            for p in postings
+        ]
         self.conn.executemany(
             """INSERT OR REPLACE INTO postings (term, doc_id, term_frequency, positions)
-               VALUES (?, ?, ?, ?)""",
-            [(term, p.doc_id, p.term_frequency, json.dumps(p.positions)) for p in postings],
+            VALUES (?, ?, ?, ?)""",
+            rows,
         )
         self.conn.commit()
+
+    def add_posting(self, term: str, postings: list[Posting]) -> None:
+        self.add_postings_bulk([(term, postings)])
 
     def get_postings(self, term: str) -> list[Posting]:
         rows = self.conn.execute(
