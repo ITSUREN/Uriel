@@ -54,12 +54,13 @@ class Indexer:
             path = path,
             title = filename,
             length = len(tokens),
-            last_modified = datetime.fromtimestamp(os.path.getmtime(path))
+            last_modified = datetime.fromtimestamp(os.path.getmtime(path)),
+            content = text
         )
         self.doc_repo.save(doc)
 
         positions_map : dict[str, list[int]] = {}
-
+        
         for pos, token in enumerate(tokens):
             if token not in positions_map:
                 positions_map[token] = []

@@ -5,6 +5,7 @@ from backend.app.services.config_service import DEFAULT_CONFIG
 from backend.app.query_expansion.rocchio import RocchioFeedback, RocchioParams
 from backend.app.query_expansion.wordnet_expansion import WordNetExpander
 from backend.app.query_expansion.spell_correction import SpellCorrector
+from backend.app.services.snippet_service import SnippetBuilder
 
 class SearchService:
     def __init__(self, doc_repo, index_repo, preprocessor, config_repo, ranking_factory = RankingFactory, spell_corrector : SpellCorrector | None = None):
@@ -14,6 +15,7 @@ class SearchService:
         self.preprocessor = preprocessor
         self.ranking_factory = ranking_factory
         self.spell_corrector = spell_corrector
+        self.snippet_builder = SnippetBuilder(index_repo)
 
     def _algorithm_kwargs(self, algorithm, config):
         return config["ranking"]["bm25"] if algorithm == RankingAlgorithmType.BM25 else {}
@@ -53,7 +55,7 @@ class SearchService:
         ranker = self.ranking_factory.create(algorithm, **self._algorithm_kwargs(algorithm, config))
         documents = self.doc_repo.all()
         results = ranker.score(query_weights, self.index_repo, documents, top_k)
-        self._enrich(results, documents)
+        self._enrich(results, set(query_weights.keys()))
         return results, corrections
     
     def search_with_feedback(self, query: str, relevant_doc_ids: list[int], non_relevant_doc_ids: list[int], algorithm = None, top_k = None) -> list[SearchResult]:
@@ -69,7 +71,7 @@ class SearchService:
 
         ranker = self.ranking_factory.create(algorithm, **self._algorithm_kwargs(algorithm, config))
         results = ranker.score(expanded_query_weights, self.index_repo, documents, top_k)
-        self._enrich(results, documents)
+        self._enrich(results, set(expanded_query_weights.keys()))
         return results
     
     def related(self, doc_id: int, algorithm = None, top_k = 5) -> list[SearchResult]:
@@ -93,15 +95,20 @@ class SearchService:
         # postings beforehand (which would require special-casing the ranking algorithms).
         raw_results = ranker.score(query_weights, self.index_repo, documents, top_k + 1)
         results = [result for result in raw_results if result.doc_id != doc_id][:top_k]
-        self._enrich(results,documents)
+        # No user-typed query here — this is doc-similarity, not a text search — so there's
+        # nothing meaningful to highlight. Empty set makes SnippetBuilder fall back to a
+        # plain leading excerpt instead of trying to highlight the document's own top terms.
+        self._enrich(results, set())
         return results
 
-    def _enrich(self, results: list[SearchResult], documents: list) -> None:
+    def _enrich(self, results: list[SearchResult], query_terms: set[str]) -> None:
+        # Deliberately re-fetches WITH content here — doc_repo.all() (used for ranking, above)
+        # returns content-less Documents on purpose, so this can't reuse that dict.
+        docs_with_content = self.doc_repo.get_many([r.doc_id for r in results])
         for result in results:
-            doc = documents[result.doc_id]
+            doc = docs_with_content.get(result.doc_id)
+            if doc is None:
+                continue
             result.title = doc.title
             result.path = doc.path
-            result.snippet = self._make_snippet(doc)
-
-    def _make_snippet(self, doc) -> str:
-        return doc.title  # placeholder — real snippet needs stored raw text or positions+source lookup
+            result.snippet = self.snippet_builder.build(doc.content, query_terms)

@@ -1,6 +1,6 @@
+#backend/app/tests/unit/fakes.py
 from backend.app.storage.base import IndexRepository
 from backend.app.models.posting import Posting
-
 
 class FakeIndexRepo(IndexRepository):
     """
