@@ -24,4 +24,8 @@ export const getIndexStats = () => {
   return apiClient.get("/index/stats");
 };
 
+export const getRelatedDocuments = (docId) => {
+  return apiClient.get(`/documents/${docId}/related`);
+};
+
 export default apiClient;
