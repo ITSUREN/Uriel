@@ -13,14 +13,14 @@ class SQLiteDocumentRepository(DocumentRepository):
 
     def save(self, doc: Document) -> None:
         self.conn.execute(
-            """INSERT OR REPLACE INTO documents (doc_id, path, title, length, last_modified, content) VALUES (?, ?, ?, ?, ?, ?)""",
-            (doc.doc_id, doc.path, doc.title, doc.length, doc.last_modified.isoformat(), doc.content),
+            """INSERT OR REPLACE INTO documents (doc_id, path, title, length, last_modified) VALUES (?, ?, ?, ?, ?)""",
+            (doc.doc_id, doc.path, doc.title, doc.length, doc.last_modified.isoformat()),
         )
         self.conn.commit()
 
     def get(self, doc_id: int) -> Document | None:
         row = self.conn.execute(
-            "SELECT doc_id, path, title, length, last_modified, content FROM documents WHERE doc_id = ?",
+            "SELECT doc_id, path, title, length, last_modified FROM documents WHERE doc_id = ?",
             (doc_id,)
         ).fetchone()
         
@@ -31,7 +31,7 @@ class SQLiteDocumentRepository(DocumentRepository):
             return {}
         placeholders = ",".join("?" for _ in doc_ids)
         rows = self.conn.execute(
-            f"""SELECT doc_id, path, title, length, last_modified, content
+            f"""SELECT doc_id, path, title, length, last_modified
                 FROM documents WHERE doc_id IN ({placeholders})""",
             doc_ids,
         ).fetchall()
@@ -60,7 +60,6 @@ class SQLiteDocumentRepository(DocumentRepository):
             title=row[2],
             length=row[3],
             last_modified=datetime.fromisoformat(row[4]),
-            content=row[5]
         )
 
     @staticmethod
@@ -73,7 +72,6 @@ class SQLiteDocumentRepository(DocumentRepository):
             title=row[2],
             length=row[3],
             last_modified=datetime.fromisoformat(row[4]),
-            content="",
         )
     
 class SQLiteIndexRepository(IndexRepository):

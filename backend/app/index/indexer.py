@@ -80,7 +80,6 @@ class Indexer:
             title=filename,
             length=offset,
             last_modified=datetime.fromtimestamp(os.path.getmtime(path)),
-            content="",  # no longer stored — see snippet_service.py
         )
         self.doc_repo.save(doc)
 
