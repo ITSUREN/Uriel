@@ -16,7 +16,8 @@ class TestSystemEndToEnd:
         for algo in ("tfidf", "bm25"):
             resp = client.post("/search", json={"query": "cat", "algorithm": algo})
             assert resp.status_code == 200
-            assert resp.json()[0]["title"] == "cats.txt"
+            body = resp.json()
+            assert body["results"][0]["title"] == "cats.txt"
 
     def test_default_directory_cannot_be_deleted(self, client):
         """ST-012 (R7)"""
@@ -38,7 +39,7 @@ class TestSystemEndToEnd:
     def test_search_then_feedback_changes_ranking(self, client):
         """ST-015 (R10)"""
         client.post("/index/build")
-        first = client.post("/search", json={"query": "pets"}).json()
+        first = client.post("/search", json={"query": "pets"}).json()["results"]
         cats_id = next(r["doc_id"] for r in first if r["title"] == "cats.txt")
 
         second = client.post("/search/feedback", json={

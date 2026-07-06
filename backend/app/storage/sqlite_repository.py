@@ -13,30 +13,41 @@ class SQLiteDocumentRepository(DocumentRepository):
 
     def save(self, doc: Document) -> None:
         self.conn.execute(
-            """INSERT OR REPLACE INTO documents (doc_id, path, title, length, last_modified) VALUES (?, ?, ?, ?, ?)""",
-            (doc.doc_id, doc.path, doc.title, doc.length, doc.last_modified.isoformat()),
+            """INSERT OR REPLACE INTO documents (doc_id, path, title, length, last_modified, content) VALUES (?, ?, ?, ?, ?, ?)""",
+            (doc.doc_id, doc.path, doc.title, doc.length, doc.last_modified.isoformat(), doc.content),
         )
         self.conn.commit()
 
     def get(self, doc_id: int) -> Document | None:
         row = self.conn.execute(
-            "SELECT doc_id, path, title, length, last_modified FROM documents WHERE doc_id = ?",
+            "SELECT doc_id, path, title, length, last_modified, content FROM documents WHERE doc_id = ?",
             (doc_id,)
         ).fetchone()
         
         return self._row_to_doc(row) if row else None
     
-    def all(self) ->  dict[int, Document]:
+    def get_many(self, doc_ids: list[int]) -> dict[int, Document]:
+        if not doc_ids:
+            return {}
+        placeholders = ",".join("?" for _ in doc_ids)
+        rows = self.conn.execute(
+            f"""SELECT doc_id, path, title, length, last_modified, content
+                FROM documents WHERE doc_id IN ({placeholders})""",
+            doc_ids,
+        ).fetchall()
+        return {row[0]: self._row_to_doc(row) for row in rows}
+    
+    def all(self) -> dict[int, Document]:
         rows = self.conn.execute(
             "SELECT doc_id, path, title, length, last_modified FROM documents"
         ).fetchall()
-        
-        return {row[0]: self._row_to_doc(row) for row in rows}
+
+        return {row[0]: self._row_to_doc_lightweight(row) for row in rows}
     
     def exists_by_path(self, path: str) -> bool:
         row = self.conn.execute("SELECT 1 FROM documents where path = ?", (path,)).fetchone()
         return row is not None
-    
+
     def next_id(self) -> int:
         row = self.conn.execute("SELECT COALESCE(MAX(doc_id), -1) FROM documents").fetchone()
         return row[0] + 1
@@ -48,20 +59,42 @@ class SQLiteDocumentRepository(DocumentRepository):
             path=row[1],
             title=row[2],
             length=row[3],
-            last_modified=datetime.fromisoformat(row[4])
+            last_modified=datetime.fromisoformat(row[4]),
+            content=row[5]
+        )
+
+    @staticmethod
+    def _row_to_doc_lightweight(row) -> Document:
+        """Used by all() only — omits content since ranking never reads it,
+        and loading full text for the whole corpus on every search would be wasteful."""
+        return Document(
+            doc_id=row[0],
+            path=row[1],
+            title=row[2],
+            length=row[3],
+            last_modified=datetime.fromisoformat(row[4]),
+            content="",
         )
     
 class SQLiteIndexRepository(IndexRepository):
     def __init__(self, conn: sqlite3.Connection):
         self.conn = conn
 
-    def add_posting(self, term: str, postings: list[Posting]) -> None:
+    def add_postings_bulk(self, entries: list[tuple[str, list[Posting]]]) -> None:
+        rows = [
+            (term, p.doc_id, p.term_frequency, json.dumps(p.positions))
+            for term, postings in entries
+            for p in postings
+        ]
         self.conn.executemany(
             """INSERT OR REPLACE INTO postings (term, doc_id, term_frequency, positions)
-               VALUES (?, ?, ?, ?)""",
-            [(term, p.doc_id, p.term_frequency, json.dumps(p.positions)) for p in postings],
+            VALUES (?, ?, ?, ?)""",
+            rows,
         )
         self.conn.commit()
+
+    def add_posting(self, term: str, postings: list[Posting]) -> None:
+        self.add_postings_bulk([(term, postings)])
 
     def get_postings(self, term: str) -> list[Posting]:
         rows = self.conn.execute(
@@ -89,6 +122,10 @@ class SQLiteIndexRepository(IndexRepository):
             "SELECT term, term_frequency FROM document_terms WHERE doc_id = ?", (doc_id,)
         ).fetchall()
         return {row[0]: row[1] for row in rows}
+    
+    def get_vocabulary(self) -> list[str]:
+        rows = self.conn.execute("SELECT DISTINCT term FROM postings").fetchall()
+        return [row[0] for row in rows]
 
     def clear(self) -> None:
         self.conn.execute("DELETE FROM postings")

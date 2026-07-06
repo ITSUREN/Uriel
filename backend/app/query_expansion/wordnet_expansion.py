@@ -40,17 +40,18 @@ class WordNetExpander:
         except Exception:
             logger.exception("WordNet lookup failed for term: %s", term)
             return []
-        
-        found = []
+        found: list[str] = []
+        seen_lower: set[str] = set()
         for synset in synsets:
             if synset is None:
                 continue
-            
             for lemma in synset.lemma_names():
                 candidate = lemma.replace("_", " ")
-                if candidate.lower() == term or candidate in found:
+                candidate_lower = candidate.lower()
+                if candidate_lower == term or candidate_lower in seen_lower:
                     continue
                 found.append(candidate)
+                seen_lower.add(candidate_lower)
                 if len(found) >= self.max_synonyms_per_term:
                     return found
         return found

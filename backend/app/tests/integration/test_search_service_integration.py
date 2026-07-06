@@ -21,13 +21,15 @@ class TestSearchServiceIntegration:
     def test_query_ranks_correct_document_first_bm25(self, repos, sample_corpus_dir, preprocessing_config):
         """IT-021"""
         svc = _build_service(repos, sample_corpus_dir, preprocessing_config)
-        results = svc.search("cat", algorithm=RankingAlgorithmType.BM25)
+        results, corrections = svc.search("cat", algorithm=RankingAlgorithmType.BM25)
+        assert corrections == {}
         assert results[0].title == "cats.txt"
 
     def test_query_ranks_correct_document_first_tfidf(self, repos, sample_corpus_dir, preprocessing_config):
         """IT-022"""
         svc = _build_service(repos, sample_corpus_dir, preprocessing_config)
-        results = svc.search("cat", algorithm=RankingAlgorithmType.TFIDF)
+        results, corrections = svc.search("cat", algorithm=RankingAlgorithmType.TFIDF)
+        assert corrections == {}
         assert results[0].title == "cats.txt"
 
     def test_feedback_measurably_changes_scores(self, repos, sample_corpus_dir, preprocessing_config):
@@ -35,6 +37,7 @@ class TestSearchServiceIntegration:
         svc = _build_service(repos, sample_corpus_dir, preprocessing_config)
         docs = svc.doc_repo.all()
         cats_id = next(d.doc_id for d in docs.values() if d.title == "cats.txt")
-        baseline = svc.search("pets", algorithm=RankingAlgorithmType.BM25)
+        baseline, baseline_corrections = svc.search("pets", algorithm=RankingAlgorithmType.BM25)
+        assert baseline_corrections == {}
         boosted = svc.search_with_feedback("pets", relevant_doc_ids=[cats_id], non_relevant_doc_ids=[], algorithm=RankingAlgorithmType.BM25)
         assert baseline[0].score != boosted[0].score

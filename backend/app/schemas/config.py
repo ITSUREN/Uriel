@@ -55,12 +55,14 @@ class QueryExpansionConfigOut(BaseModel):
     wordnet_enabled: bool
     wordnet_max_synonyms_per_term: int
     wordnet_synonym_weight: float
+    spelling_correction_enabled: bool
     rocchio: RocchioConfigOut
 
 class QueryExpansionConfigUpdate(BaseModel):
     wordnet_enabled: bool | None = None
     wordnet_max_synonyms_per_term: int | None = None
     wordnet_synonym_weight: float | None = None
+    spelling_correction_enabled: bool | None = None
     rocchio: RocchioConfigUpdate | None = None
 
 class DirectoryOut(BaseModel):
