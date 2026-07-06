@@ -4,6 +4,7 @@ import {
   updatePreprocessingConfig,
   updateRankingConfig,
   updateQueryExpansionConfig,
+  rebuildIndex,
 } from "../../services/api";
 import "./SettingsModal.css";
 
@@ -20,6 +21,8 @@ function SettingsModal({ isOpen, onClose, config, onConfigUpdate }) {
   const [saveError, setSaveError] = useState(null);
   const [reindexMessage, setReindexMessage] = useState(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [rebuilding, setRebuilding] = useState(false);
+  const [rebuildSuccess, setRebuildSuccess] = useState(null);
 
   useEffect(() => {
     if (!isOpen) {
@@ -34,6 +37,7 @@ function SettingsModal({ isOpen, onClose, config, onConfigUpdate }) {
     setSaveError(null);
     setReindexMessage(null);
     setSaveSuccess(false);
+    setRebuildSuccess(null);
 
     setStatsLoading(true);
     setStatsError(null);
@@ -48,7 +52,7 @@ function SettingsModal({ isOpen, onClose, config, onConfigUpdate }) {
       .finally(() => {
         setStatsLoading(false);
       });
-  }, [isOpen, config]);
+  }, [isOpen]);
 
   if (!isOpen) {
     return null;
@@ -179,13 +183,37 @@ const handleSave = async () => {
 
     setSaveSuccess(true);
     setTimeout(() => setSaveSuccess(false), 3000);
-    if (!preprocessingChanged) {
-      onClose();
+    if (preprocessingChanged) {
+        // keep modal open so the user can rebuild
+    } else {
+        onClose();
     }
   } catch (err) {
     setSaveError(err.message);
   } finally {
     setSaving(false);
+  }
+};
+
+const handleRebuild = async () => {
+  setRebuilding(true);
+
+  try {
+    const response = await rebuildIndex();
+
+    setRebuildSuccess(
+      `Index rebuilt successfully. ${response.data.reindexed} documents were indexed.`
+    );
+
+    setReindexMessage(null);
+    setRebuildSuccess('Index rebuilt successfully.');
+
+    const statsResponse = await getIndexStats();
+    setStats(statsResponse.data);
+  } catch (err) {
+    setSaveError(err.message);
+  } finally {
+    setRebuilding(false);
   }
 };
 
@@ -529,8 +557,21 @@ const handleSave = async () => {
               </div>
 
               {reindexMessage && (
-                <p className="settings-reindex-message">{reindexMessage}</p>
+                <div className="settings-reindex">
+                  <p className="settings-reindex-message">
+                    {reindexMessage}
+                  </p>
+
+                  <button
+                    className="settings-rebuild-button"
+                    onClick={handleRebuild}
+                    disabled={rebuilding}
+                  >
+                    {rebuilding ? "Rebuilding..." : "Rebuild Index"}
+                  </button>
+                </div>
               )}
+              {rebuildSuccess && (<p className="settings-success">{rebuildSuccess}</p>)}
               {saveSuccess && (<p className="settings-success">✓ Settings saved successfully.</p>)}
               {saveError && <p className="settings-error">{saveError}</p>}
 

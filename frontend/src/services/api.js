@@ -40,4 +40,8 @@ export const updateQueryExpansionConfig = (data) => {
   return apiClient.put("/config/query-expansion", data);
 };
 
+export const rebuildIndex = () => {
+  return apiClient.post("/index/rebuild");
+};
+
 export default apiClient;
