@@ -28,4 +28,16 @@ export const getRelatedDocuments = (docId) => {
   return apiClient.get(`/documents/${docId}/related`);
 };
 
+export const updatePreprocessingConfig = (data) => {
+  return apiClient.put("/config/preprocessing", data);
+};
+
+export const updateRankingConfig = (data) => {
+  return apiClient.put("/config/ranking", data);
+};
+
+export const updateQueryExpansionConfig = (data) => {
+  return apiClient.put("/config/query-expansion", data);
+};
+
 export default apiClient;
