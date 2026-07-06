@@ -182,7 +182,11 @@
   padding-top: 1rem;
   border-top: 1px solid #e5e7eb;
 }
-
+.settings-success {
+    color: #2e7d32;
+    font-weight: 600;
+    margin-top: 10px;
+}
 .settings-cancel-button,
 .settings-save-button {
   padding: 0.6rem 1.25rem;

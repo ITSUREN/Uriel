@@ -19,6 +19,7 @@ function SettingsModal({ isOpen, onClose, config, onConfigUpdate }) {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
   const [reindexMessage, setReindexMessage] = useState(null);
+  const [saveSuccess, setSaveSuccess] = useState(false);
 
   useEffect(() => {
     if (!isOpen) {
@@ -27,11 +28,12 @@ function SettingsModal({ isOpen, onClose, config, onConfigUpdate }) {
 
     // Seed local editable form state from the shared config each time the
     // modal opens, so Cancel always reverts to the current source of truth.
-    setPreprocessingForm(config.preprocessing);
-    setRankingForm(config.ranking);
-    setQueryExpansionForm(config.query_expansion);
+    setPreprocessingForm(structuredClone(config.preprocessing));
+    setRankingForm(structuredClone(config.ranking));
+    setQueryExpansionForm(structuredClone(config.query_expansion));
     setSaveError(null);
     setReindexMessage(null);
+    setSaveSuccess(false);
 
     setStatsLoading(true);
     setStatsError(null);
@@ -46,7 +48,7 @@ function SettingsModal({ isOpen, onClose, config, onConfigUpdate }) {
       .finally(() => {
         setStatsLoading(false);
       });
-  }, [isOpen]);
+  }, [isOpen, config]);
 
   if (!isOpen) {
     return null;
@@ -98,44 +100,94 @@ function SettingsModal({ isOpen, onClose, config, onConfigUpdate }) {
     onClose();
   };
 
-  const handleSave = () => {
-    setSaving(true);
-    setSaveError(null);
-    setReindexMessage(null);
+  const isEqual = (a,b) => JSON.stringify(a) === JSON.stringify(b);
+  const hasChanges =
+    preprocessingForm &&
+    rankingForm &&
+    queryExpansionForm &&
+    (
+      !isEqual(preprocessingForm, config.preprocessing) ||
+      !isEqual(rankingForm, config.ranking) ||
+      !isEqual(queryExpansionForm, config.query_expansion)
+    );
 
-    Promise.all([
-      updatePreprocessingConfig(preprocessingForm),
-      updateRankingConfig(rankingForm),
-      updateQueryExpansionConfig(queryExpansionForm),
-    ])
-      .then(([preprocessingRes, rankingRes, queryExpansionRes]) => {
-        const updatedPreprocessing = preprocessingRes.data.config.preprocessing;
-        const updatedRanking = rankingRes.data.config.ranking;
-        const updatedQueryExpansion =
-          queryExpansionRes.data.config.query_expansion;
+const handleSave = async () => {
+  setSaving(true);
+  setSaveError(null);
+  setSaveSuccess(false);
+  setReindexMessage(null);
 
-        setPreprocessingForm(updatedPreprocessing);
-        setRankingForm(updatedRanking);
-        setQueryExpansionForm(updatedQueryExpansion);
+  try {
+    const preprocessingChanged = !isEqual(
+      preprocessingForm,
+      config.preprocessing
+    );
 
-        onConfigUpdate({
-          ...config,
-          preprocessing: updatedPreprocessing,
-          ranking: updatedRanking,
-          query_expansion: updatedQueryExpansion,
-        });
+    const rankingChanged = !isEqual(
+      rankingForm,
+      config.ranking
+    );
 
-        if (preprocessingRes.data.reindex_required) {
-          setReindexMessage(preprocessingRes.data.message);
-        }
-      })
-      .catch((err) => {
-        setSaveError(err.message);
-      })
-      .finally(() => {
-        setSaving(false);
-      });
-  };
+    const queryExpansionChanged = !isEqual(
+      queryExpansionForm,
+      config.query_expansion
+    );
+
+    if (
+      !preprocessingChanged &&
+      !rankingChanged &&
+      !queryExpansionChanged
+    ) {
+      onClose();
+      return;
+    }
+
+    let updatedPreprocessing = config.preprocessing;
+    let updatedRanking = config.ranking;
+    let updatedQueryExpansion = config.query_expansion;
+
+    if (preprocessingChanged) {
+      const res = await updatePreprocessingConfig(preprocessingForm);
+
+      updatedPreprocessing = res.data.config.preprocessing;
+
+      if (res.data.reindex_required) {
+        setReindexMessage(res.data.message);
+      }
+    }
+
+    if (rankingChanged) {
+      const res = await updateRankingConfig(rankingForm);
+      updatedRanking = res.data.config.ranking;
+    }
+
+    if (queryExpansionChanged) {
+      const res = await updateQueryExpansionConfig(queryExpansionForm);
+      updatedQueryExpansion = res.data.config.query_expansion;
+    }
+
+    setPreprocessingForm(updatedPreprocessing);
+    setRankingForm(updatedRanking);
+    setQueryExpansionForm(updatedQueryExpansion);
+
+    onConfigUpdate({
+      ...config,
+      preprocessing: updatedPreprocessing,
+      ranking: updatedRanking,
+      query_expansion: updatedQueryExpansion,
+    });
+
+    setSaveSuccess(true);
+    setTimeout(() => setSaveSuccess(false), 3000);
+    if (!preprocessingChanged) {
+      onClose();
+    }
+  } catch (err) {
+    setSaveError(err.message);
+  } finally {
+    setSaving(false);
+  }
+};
 
   return (
     <div className="settings-backdrop" onClick={onClose}>
@@ -479,6 +531,7 @@ function SettingsModal({ isOpen, onClose, config, onConfigUpdate }) {
               {reindexMessage && (
                 <p className="settings-reindex-message">{reindexMessage}</p>
               )}
+              {saveSuccess && (<p className="settings-success">✓ Settings saved successfully.</p>)}
               {saveError && <p className="settings-error">{saveError}</p>}
 
               <div className="settings-footer">
@@ -494,9 +547,13 @@ function SettingsModal({ isOpen, onClose, config, onConfigUpdate }) {
                   className="settings-save-button"
                   type="button"
                   onClick={handleSave}
-                  disabled={saving}
+                  disabled={saving || !hasChanges}
                 >
-                  {saving ? "Saving..." : "Save Changes"}
+                  {saving 
+                    ? "Saving..." 
+                      : hasChanges
+                        ? "Save Changes"
+                        : "No Changes"}
                 </button>
               </div>
             </>
