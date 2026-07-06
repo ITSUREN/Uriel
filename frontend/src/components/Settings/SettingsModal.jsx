@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import {
-  getConfig,
   getIndexStats,
   updatePreprocessingConfig,
   updateRankingConfig,
@@ -8,11 +7,10 @@ import {
 } from "../../services/api";
 import "./SettingsModal.css";
 
-function SettingsModal({ isOpen, onClose }) {
-  const [config, setConfig] = useState(null);
+function SettingsModal({ isOpen, onClose, config, onConfigUpdate }) {
   const [stats, setStats] = useState(null);
-  const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [statsError, setStatsError] = useState(null);
+  const [statsLoading, setStatsLoading] = useState(false);
 
   const [preprocessingForm, setPreprocessingForm] = useState(null);
   const [rankingForm, setRankingForm] = useState(null);
@@ -27,24 +25,26 @@ function SettingsModal({ isOpen, onClose }) {
       return;
     }
 
-    setLoading(true);
-    setError(null);
+    // Seed local editable form state from the shared config each time the
+    // modal opens, so Cancel always reverts to the current source of truth.
+    setPreprocessingForm(config.preprocessing);
+    setRankingForm(config.ranking);
+    setQueryExpansionForm(config.query_expansion);
     setSaveError(null);
     setReindexMessage(null);
 
-    Promise.all([getConfig(), getIndexStats()])
-      .then(([configResponse, statsResponse]) => {
-        setConfig(configResponse.data);
-        setStats(statsResponse.data);
-        setPreprocessingForm(configResponse.data.preprocessing);
-        setRankingForm(configResponse.data.ranking);
-        setQueryExpansionForm(configResponse.data.query_expansion);
+    setStatsLoading(true);
+    setStatsError(null);
+
+    getIndexStats()
+      .then((response) => {
+        setStats(response.data);
       })
       .catch((err) => {
-        setError(err.message);
+        setStatsError(err.message);
       })
       .finally(() => {
-        setLoading(false);
+        setStatsLoading(false);
       });
   }, [isOpen]);
 
@@ -109,9 +109,21 @@ function SettingsModal({ isOpen, onClose }) {
       updateQueryExpansionConfig(queryExpansionForm),
     ])
       .then(([preprocessingRes, rankingRes, queryExpansionRes]) => {
-        setPreprocessingForm(preprocessingRes.data.config);
-        setRankingForm(rankingRes.data.config);
-        setQueryExpansionForm(queryExpansionRes.data.config);
+        const updatedPreprocessing = preprocessingRes.data.config.preprocessing;
+        const updatedRanking = rankingRes.data.config.ranking;
+        const updatedQueryExpansion =
+          queryExpansionRes.data.config.query_expansion;
+
+        setPreprocessingForm(updatedPreprocessing);
+        setRankingForm(updatedRanking);
+        setQueryExpansionForm(updatedQueryExpansion);
+
+        onConfigUpdate({
+          ...config,
+          preprocessing: updatedPreprocessing,
+          ranking: updatedRanking,
+          query_expansion: updatedQueryExpansion,
+        });
 
         if (preprocessingRes.data.reindex_required) {
           setReindexMessage(preprocessingRes.data.message);
@@ -135,11 +147,13 @@ function SettingsModal({ isOpen, onClose }) {
           </button>
         </div>
 
-        {loading && <p className="settings-status">Loading settings...</p>}
-        {error && <p className="settings-error">{error}</p>}
+        {statsLoading && (
+          <p className="settings-status">Loading settings...</p>
+        )}
+        {statsError && <p className="settings-error">{statsError}</p>}
 
-        {!loading &&
-          !error &&
+        {!statsLoading &&
+          !statsError &&
           config &&
           stats &&
           preprocessingForm &&

@@ -1,12 +1,17 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { searchDocuments } from "../../services/api";
 import "./SearchBar.css";
 
-function SearchBar({ onResults, onError, onLoadingChange }) {
+function SearchBar({ config, onResults, onError, onLoadingChange }) {
   const [query, setQuery] = useState("");
-  const [algorithm, setAlgorithm] = useState("bm25");
-  const [topK, setTopK] = useState(10);
+  const [algorithm, setAlgorithm] = useState(config.ranking.default_algorithm);
+  const [topK, setTopK] = useState(config.ranking.default_top_k);
   const [expandQuery, setExpandQuery] = useState(false);
+
+  useEffect(() => {
+    setAlgorithm(config.ranking.default_algorithm);
+    setTopK(config.ranking.default_top_k);
+  }, [config.ranking.default_algorithm, config.ranking.default_top_k]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -47,6 +52,7 @@ function SearchBar({ onResults, onError, onLoadingChange }) {
         onChange={(e) => setAlgorithm(e.target.value)}
       >
         <option value="bm25">bm25</option>
+        <option value="tfidf">tfidf</option>
       </select>
 
       <input

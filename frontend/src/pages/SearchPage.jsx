@@ -2,7 +2,7 @@ import { useState } from "react";
 import SearchBar from "../components/Search/SearchBar";
 import ResultsList from "../components/Results/ResultsList";
 
-function SearchPage() {
+function SearchPage({ config }) {
   const [results, setResults] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -10,6 +10,7 @@ function SearchPage() {
   return (
     <>
       <SearchBar
+        config={config}
         onResults={setResults}
         onError={setError}
         onLoadingChange={setLoading}
