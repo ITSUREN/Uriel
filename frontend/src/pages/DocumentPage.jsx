@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getDocument, getRelatedDocuments } from "../services/api";
+import { attemptOpenFile, copyPathToClipboard } from "../utils/fileOpen";
 import ResultsList from "../components/Results/ResultsList";
 import "./DocumentPage.css";
 
@@ -12,6 +13,7 @@ function DocumentPage() {
   const [relatedDocuments, setRelatedDocuments] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -31,6 +33,18 @@ function DocumentPage() {
         setLoading(false);
       });
   }, [docId]);
+
+  const handleOpen = () => {
+    attemptOpenFile(docData.path);
+  };
+
+  const handleCopy = async () => {
+    const success = await copyPathToClipboard(docData.path);
+    if (success) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    }
+  };
 
   return (
     <div className="document-page">
@@ -54,6 +68,14 @@ function DocumentPage() {
               Last Modified: {docData.last_modified}
             </p>
             <p className="document-detail">Length: {docData.length}</p>
+            <div className="document-actions">
+              <button className="document-action-button" onClick={handleOpen}>
+                Open File
+              </button>
+              <button className="document-action-button" onClick={handleCopy}>
+                {copied ? "Copied!" : "Copy Path"}
+              </button>
+            </div>
           </div>
 
           <div className="document-content-placeholder">

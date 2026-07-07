@@ -2,7 +2,13 @@ import { useState, useEffect } from "react";
 import { searchDocuments } from "../../services/api";
 import "./SearchBar.css";
 
-function SearchBar({ config, onResults, onError, onLoadingChange }) {
+function SearchBar({
+  config,
+  onResults,
+  onError,
+  onLoadingChange,
+  onCorrectedTerms,
+}) {
   const [query, setQuery] = useState("");
   const [algorithm, setAlgorithm] = useState(config.ranking.default_algorithm);
   const [topK, setTopK] = useState(config.ranking.default_top_k);
@@ -18,6 +24,7 @@ function SearchBar({ config, onResults, onError, onLoadingChange }) {
 
     onLoadingChange(true);
     onError(null);
+    onCorrectedTerms(null);
 
     searchDocuments({
       query,
@@ -26,7 +33,8 @@ function SearchBar({ config, onResults, onError, onLoadingChange }) {
       expand_query: expandQuery,
     })
       .then((response) => {
-        onResults(response.data);
+        onResults(response.data.results);
+        onCorrectedTerms(response.data.corrected_terms || null);
       })
       .catch((err) => {
         onError(err.message);

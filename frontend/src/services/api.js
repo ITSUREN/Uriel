@@ -44,4 +44,16 @@ export const rebuildIndex = () => {
   return apiClient.post("/index/rebuild");
 };
 
+export const getDirectories = () => {
+  return apiClient.get("/config/directories");
+};
+
+export const addDirectory = (path) => {
+  return apiClient.post("/config/directories", { path });
+};
+
+export const removeDirectory = (dirId) => {
+  return apiClient.delete(`/config/directories/${dirId}`);
+};
+
 export default apiClient;

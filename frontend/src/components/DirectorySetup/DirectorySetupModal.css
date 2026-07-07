@@ -1,0 +1,89 @@
+.dir-setup-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 1rem;
+}
+
+.dir-setup-modal {
+  background-color: #ffffff;
+  border-radius: 10px;
+  width: 90%;
+  max-width: 440px;
+  padding: 1.75rem 2rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.dir-setup-modal h2 {
+  margin: 0 0 0.75rem 0;
+  font-size: 1.15rem;
+  color: #111827;
+}
+
+.dir-setup-modal p {
+  margin: 0 0 1.25rem 0;
+  color: #6b7280;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.dir-setup-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.6rem 0.75rem;
+  font-size: 0.9rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  margin-bottom: 0.75rem;
+}
+
+.dir-setup-error {
+  color: #b91c1c;
+  font-size: 0.85rem;
+  margin: -0.5rem 0 1rem 0;
+}
+
+.dir-setup-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+.dir-setup-primary-button,
+.dir-setup-secondary-button {
+  padding: 0.55rem 1.1rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.dir-setup-secondary-button {
+  background-color: #ffffff;
+  color: #374151;
+  border: 1px solid #d1d5db;
+}
+
+.dir-setup-secondary-button:hover {
+  background-color: #f3f4f6;
+}
+
+.dir-setup-primary-button {
+  background-color: #2563eb;
+  color: #ffffff;
+  border: none;
+}
+
+.dir-setup-primary-button:hover {
+  background-color: #1d4ed8;
+}
+
+.dir-setup-primary-button:disabled,
+.dir-setup-secondary-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

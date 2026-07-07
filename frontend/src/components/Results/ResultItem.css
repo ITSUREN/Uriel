@@ -38,3 +38,23 @@
   color: #6b7280;
   word-break: break-all;
 }
+
+.result-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.result-action-button {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8rem;
+  color: #374151;
+  background-color: #f3f4f6;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.result-action-button:hover {
+  background-color: #e5e7eb;
+}
