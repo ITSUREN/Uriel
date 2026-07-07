@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import SearchBar from "../components/Search/SearchBar";
 import ResultsList from "../components/Results/ResultsList";
 
@@ -7,13 +7,19 @@ function SearchPage({ config }) {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const [correctedTerms, setCorrectedTerms] = useState(null);
+  const searchBarRef = useRef(null);
 
   const hasCorrections =
     correctedTerms && Object.keys(correctedTerms).length > 0;
 
+  const handleUseCorrection = () => {
+    searchBarRef.current?.runSearchWithCorrections(correctedTerms);
+  };
+
   return (
     <>
       <SearchBar
+        ref={searchBarRef}
         config={config}
         onResults={setResults}
         onError={setError}
@@ -23,10 +29,18 @@ function SearchPage({ config }) {
 
       {hasCorrections && (
         <p className="spelling-correction">
-          Showing results for:{" "}
+          Did you mean:{" "}
           {Object.entries(correctedTerms)
             .map(([original, corrected]) => `${original} → ${corrected}`)
             .join(", ")}
+          {"  "}
+          <button
+            type="button"
+            className="spelling-correction-link"
+            onClick={handleUseCorrection}
+          >
+            Search with corrected spelling
+          </button>
         </p>
       )}
 

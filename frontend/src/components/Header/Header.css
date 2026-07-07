@@ -2,27 +2,35 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1.25rem 2rem;
-  background-color: #1f2937;
+  padding: 1.35rem 2rem;
+  background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
   color: #ffffff;
+  box-shadow: var(--shadow-md);
 }
 
 .header-title {
-  font-size: 1.25rem;
+  font-size: 1.3rem;
   font-weight: 600;
+  letter-spacing: -0.01em;
   margin: 0;
 }
 
 .settings-button {
-  padding: 0.5rem 1rem;
+  padding: 0.55rem 1.15rem;
   font-size: 0.9rem;
-  color: #1f2937;
+  font-weight: 500;
+  color: #4338ca;
   background-color: #ffffff;
   border: none;
-  border-radius: 6px;
+  border-radius: 999px;
   cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.12s ease;
 }
 
 .settings-button:hover {
-  background-color: #e5e7eb;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
 }

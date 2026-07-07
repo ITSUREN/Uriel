@@ -5,6 +5,8 @@ import {
   updateRankingConfig,
   updateQueryExpansionConfig,
   rebuildIndex,
+  addDirectory,
+  removeDirectory,
 } from "../../services/api";
 import "./SettingsModal.css";
 
@@ -23,6 +25,12 @@ function SettingsModal({ isOpen, onClose, config, onConfigUpdate }) {
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [rebuilding, setRebuilding] = useState(false);
   const [rebuildSuccess, setRebuildSuccess] = useState(null);
+
+  const [newDirPath, setNewDirPath] = useState("");
+  const [addingDir, setAddingDir] = useState(false);
+  const [addDirError, setAddDirError] = useState(null);
+  const [removingDirId, setRemovingDirId] = useState(null);
+  const [removeDirError, setRemoveDirError] = useState(null);
 
   useEffect(() => {
     if (!isOpen) {
@@ -102,6 +110,53 @@ function SettingsModal({ isOpen, onClose, config, onConfigUpdate }) {
 
   const handleCancel = () => {
     onClose();
+  };
+
+  const handleAddDirectory = (e) => {
+    e.preventDefault();
+
+    if (!newDirPath.trim()) {
+      return;
+    }
+
+    setAddingDir(true);
+    setAddDirError(null);
+
+    addDirectory(newDirPath.trim())
+      .then((response) => {
+        onConfigUpdate({
+          ...config,
+          directories: [...config.directories, response.data],
+        });
+        setNewDirPath("");
+      })
+      .catch((err) => {
+        const detail = err.response?.data?.detail;
+        setAddDirError(typeof detail === "string" ? detail : err.message);
+      })
+      .finally(() => {
+        setAddingDir(false);
+      });
+  };
+
+  const handleRemoveDirectory = (dirId) => {
+    setRemovingDirId(dirId);
+    setRemoveDirError(null);
+
+    removeDirectory(dirId)
+      .then(() => {
+        onConfigUpdate({
+          ...config,
+          directories: config.directories.filter((dir) => dir.id !== dirId),
+        });
+      })
+      .catch((err) => {
+        const detail = err.response?.data?.detail;
+        setRemoveDirError(typeof detail === "string" ? detail : err.message);
+      })
+      .finally(() => {
+        setRemovingDirId(null);
+      });
   };
 
   const isEqual = (a,b) => JSON.stringify(a) === JSON.stringify(b);
@@ -547,11 +602,49 @@ const handleRebuild = async () => {
                   ) : (
                     <ul className="settings-directory-list">
                       {config.directories.map((dir) => (
-                        <li key={dir.id}>
-                          {dir.path} {dir.is_default && "(default)"}
+                        <li key={dir.id} className="settings-directory-item">
+                          <span>
+                            {dir.path} {dir.is_default && "(default)"}
+                          </span>
+                          <button
+                            type="button"
+                            className="settings-directory-remove"
+                            onClick={() => handleRemoveDirectory(dir.id)}
+                            disabled={removingDirId === dir.id}
+                          >
+                            {removingDirId === dir.id
+                              ? "Removing..."
+                              : "Remove"}
+                          </button>
                         </li>
                       ))}
                     </ul>
+                  )}
+                  {removeDirError && (
+                    <p className="settings-error">{removeDirError}</p>
+                  )}
+
+                  <form
+                    className="settings-add-directory-form"
+                    onSubmit={handleAddDirectory}
+                  >
+                    <input
+                      type="text"
+                      className="settings-add-directory-input"
+                      placeholder="Enter an absolute path to add"
+                      value={newDirPath}
+                      onChange={(e) => setNewDirPath(e.target.value)}
+                    />
+                    <button
+                      type="submit"
+                      className="settings-add-directory-button"
+                      disabled={addingDir || !newDirPath.trim()}
+                    >
+                      {addingDir ? "Adding..." : "Add"}
+                    </button>
+                  </form>
+                  {addDirError && (
+                    <p className="settings-error">{addDirError}</p>
                   )}
                 </section>
               </div>

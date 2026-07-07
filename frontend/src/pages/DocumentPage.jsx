@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getDocument, getRelatedDocuments } from "../services/api";
-import { attemptOpenFile, copyPathToClipboard } from "../utils/fileOpen";
+import { openFileBestEffort, copyPathToClipboard } from "../utils/fileOpen";
 import ResultsList from "../components/Results/ResultsList";
 import "./DocumentPage.css";
 
@@ -14,6 +14,7 @@ function DocumentPage() {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [openStatus, setOpenStatus] = useState(null);
 
   useEffect(() => {
     setLoading(true);
@@ -34,8 +35,10 @@ function DocumentPage() {
       });
   }, [docId]);
 
-  const handleOpen = () => {
-    attemptOpenFile(docData.path);
+  const handleOpen = async () => {
+    const status = await openFileBestEffort(docData.path);
+    setOpenStatus(status);
+    setTimeout(() => setOpenStatus(null), 2500);
   };
 
   const handleCopy = async () => {
@@ -76,6 +79,16 @@ function DocumentPage() {
                 {copied ? "Copied!" : "Copy Path"}
               </button>
             </div>
+            {openStatus === "copied" && (
+              <p className="document-action-note">
+                Browser blocked direct opening — path copied instead.
+              </p>
+            )}
+            {openStatus === "failed" && (
+              <p className="document-action-note document-action-note-error">
+                Couldn't open or copy the path.
+              </p>
+            )}
           </div>
 
           <div className="document-content-placeholder">
