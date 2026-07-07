@@ -1,7 +1,7 @@
 import { IconSettings } from "../Icons";
 import "./Header.css";
 
-function Header({ onSettingsClick }) {
+function Header({ onSettingsClick, settingsDisabled = false }) {
   return (
     <header className="header">
       <div className="header-brand">
@@ -15,7 +15,8 @@ function Header({ onSettingsClick }) {
         className="settings-button"
         type="button"
         onClick={onSettingsClick}
-        title="Settings"
+        disabled={settingsDisabled}
+        title={settingsDisabled ? "Complete setup first" : "Settings"}
         aria-label="Settings"
       >
         <IconSettings size={18} />

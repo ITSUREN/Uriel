@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Header from "./components/Header/Header";
 import SettingsModal from "./components/Settings/SettingsModal";
 import DirectorySetupModal from "./components/DirectorySetup/DirectorySetupModal";
+import OnboardingFlow from "./components/Onboarding/OnboardingFlow";
 import SearchPage from "./pages/SearchPage";
 import DocumentPage from "./pages/DocumentPage";
 import { getConfig } from "./services/api";
@@ -15,21 +16,40 @@ function App() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isDirectorySetupOpen, setIsDirectorySetupOpen] = useState(false);
 
-  useEffect(() => {
+  // Either "backend unreachable at startup" or "onboarding never completed"
+  // route here — only the entry step differs.
+  const [onboardingStartStep, setOnboardingStartStep] = useState(null);
+
+  const loadConfig = () => {
+    setConfigLoading(true);
     getConfig()
       .then((response) => {
-        setConfig(response.data);
+        const data = {
+          ...response.data,
+          directories: response.data.directories ?? [],
+        };
+        setConfig(data);
+        setConfigError(null);
 
-        if (response.data.directories.length === 0) {
+        // ⚠️ ASSUMPTION: verify `onboarding_completed` is the real field
+        // name in your GET /config response — fix here if it's different.
+        if (!data.onboarding?.completed) {
+          setOnboardingStartStep(1);
+        } else if (data.directories.length === 0) {
           setIsDirectorySetupOpen(true);
         }
       })
       .catch((err) => {
         setConfigError(err.message);
+        setOnboardingStartStep(2); // jump straight to the fixable step
       })
       .finally(() => {
         setConfigLoading(false);
       });
+  };
+
+  useEffect(() => {
+    loadConfig();
   }, []);
 
   const handleConfigUpdate = (updatedConfig) => {
@@ -43,26 +63,53 @@ function App() {
     }));
   };
 
+  const handleOnboardingComplete = () => {
+    setOnboardingStartStep(null);
+    loadConfig();
+  };
+
   return (
     <BrowserRouter>
       <div className="app">
-        <div className="app-content">
-          <Header onSettingsClick={() => setIsSettingsOpen(true)} />
-          {configLoading && <p className="status-message">Loading configuration...</p>}
-          {configError && <p className="error-message">{configError}</p>}
-          {!configLoading && !configError && config && (
+        <Header
+          onSettingsClick={() => setIsSettingsOpen(true)}
+          settingsDisabled={!!onboardingStartStep}
+        />
+
+        {configLoading && (
+          <p className="status-message">Loading configuration...</p>
+        )}
+        {configError && !onboardingStartStep && (
+          <p className="error-message">{configError}</p>
+        )}
+
+        {!configLoading && config && !onboardingStartStep && (
+          <>
             <Routes>
               <Route path="/" element={<SearchPage config={config} />} />
               <Route path="/document/:docId" element={<DocumentPage />} />
             </Routes>
-          )}
-        </div>
 
-        {!configLoading && !configError && config && (
-          <>
-            <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} config={config} onConfigUpdate={handleConfigUpdate} />
-            <DirectorySetupModal isOpen={isDirectorySetupOpen} onClose={() => setIsDirectorySetupOpen(false)} onDirectoryAdded={handleDirectoryAdded} />
+            <SettingsModal
+              isOpen={isSettingsOpen}
+              onClose={() => setIsSettingsOpen(false)}
+              config={config}
+              onConfigUpdate={handleConfigUpdate}
+            />
+
+            <DirectorySetupModal
+              isOpen={isDirectorySetupOpen}
+              onClose={() => setIsDirectorySetupOpen(false)}
+              onDirectoryAdded={handleDirectoryAdded}
+            />
           </>
+        )}
+
+        {!configLoading && onboardingStartStep && (
+          <OnboardingFlow
+            startStep={onboardingStartStep}
+            onComplete={handleOnboardingComplete}
+          />
         )}
       </div>
     </BrowserRouter>
