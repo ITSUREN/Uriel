@@ -8,9 +8,9 @@
   padding: 0.5rem 1.1rem;
   font-size: 0.88rem;
   font-weight: 500;
-  color: var(--color-text);
-  background-color: var(--color-surface);
-  border: 1px solid var(--color-border);
+  color: var(--text);
+  background-color: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 999px;
   cursor: pointer;
   margin-bottom: 1.5rem;
@@ -18,14 +18,14 @@
 }
 
 .back-button:hover {
-  background-color: var(--color-bg);
+  background-color: var(--surface-hover);
 }
 
 .document-meta {
   padding: 1.5rem 1.75rem;
   margin-bottom: 1.5rem;
-  background-color: var(--color-surface);
-  border: 1px solid var(--color-border);
+  background-color: var(--surface);
+  border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
 }
@@ -33,11 +33,11 @@
 .document-meta h2 {
   margin: 0 0 0.5rem 0;
   font-size: 1.3rem;
-  color: var(--color-text);
+  color: var(--text);
 }
 
 .document-path {
-  color: var(--color-text-muted);
+  color: var(--text-muted);
   font-size: 0.85rem;
   word-break: break-all;
   margin: 0 0 0.75rem 0;
@@ -45,7 +45,7 @@
 
 .document-detail {
   margin: 0.2rem 0;
-  color: var(--color-text-muted);
+  color: var(--text-muted);
   font-size: 0.9rem;
 }
 
@@ -59,44 +59,45 @@
   padding: 0.5rem 1.1rem;
   font-size: 0.85rem;
   font-weight: 500;
-  color: var(--color-text);
-  background-color: var(--color-bg);
-  border: 1px solid var(--color-border);
+  color: var(--text);
+  background-color: var(--surface);
+  border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   cursor: pointer;
+  transition: background-color 0.15s ease;
 }
 
 .document-action-button:hover {
-  background-color: #e9eaf3;
+  background-color: var(--surface-hover);
 }
 
 .document-action-note {
   margin: 0.6rem 0 0 0;
   font-size: 0.82rem;
-  color: var(--color-text-muted);
+  color: var(--text-muted);
 }
 
 .document-action-note-error {
-  color: var(--color-danger);
+  color: var(--danger);
 }
 
 .document-content-placeholder {
   padding: 1.5rem 1.75rem;
   margin-bottom: 2rem;
-  background-color: var(--color-warning-bg);
-  border: 1px dashed var(--color-warning-border);
+  background-color: var(--warning-soft);
+  border: 1px dashed var(--warning-border);
   border-radius: var(--radius-lg);
 }
 
 .document-content-placeholder h3 {
   margin: 0 0 0.5rem 0;
-  color: var(--color-warning-text);
+  color: var(--warning);
   font-size: 1rem;
 }
 
 .document-content-placeholder p {
   margin: 0;
-  color: #a16207;
+  color: var(--text-muted);
   font-size: 0.9rem;
   line-height: 1.5;
 }
@@ -104,5 +105,5 @@
 .related-documents-section h3 {
   margin: 0 0 0.9rem 0;
   font-size: 1rem;
-  color: var(--color-text);
+  color: var(--text);
 }

@@ -34,10 +34,16 @@ function SettingsModal({ isOpen, onClose, config, onConfigUpdate }) {
   const [removeDirError, setRemoveDirError] = useState(null);
 
   useEffect(() => {
-    if (!isOpen) {
-      return;
-    }
+    if (!isOpen) return;
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") onClose();
+    };
 
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+    }, [isOpen, onClose]);
+  useEffect(() => {
+    if (!isOpen) return;
     // Seed local editable form state from the shared config each time the
     // modal opens, so Cancel always reverts to the current source of truth.
     setPreprocessingForm(structuredClone(config.preprocessing));
@@ -66,6 +72,7 @@ function SettingsModal({ isOpen, onClose, config, onConfigUpdate }) {
   if (!isOpen) {
     return null;
   }
+  
 
   const handlePreprocessingChange = (field, value) => {
     setPreprocessingForm((prev) => ({ ...prev, [field]: value }));

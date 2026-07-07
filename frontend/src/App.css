@@ -19,7 +19,7 @@
   z-index: 0;
 }
 
-.app > * {
+.app-content {
   position: relative;
   z-index: 1;
 }

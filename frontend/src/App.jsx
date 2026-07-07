@@ -45,33 +45,24 @@ function App() {
 
   return (
     <BrowserRouter>
+      // App.jsx
       <div className="app">
-        <Header onSettingsClick={() => setIsSettingsOpen(true)} />
-
-        {configLoading && (
-          <p className="status-message">Loading configuration...</p>
-        )}
-        {configError && <p className="error-message">{configError}</p>}
-
-        {!configLoading && !configError && config && (
-          <>
+        <div className="app-content">
+          <Header onSettingsClick={() => setIsSettingsOpen(true)} />
+          {configLoading && <p className="status-message">Loading configuration...</p>}
+          {configError && <p className="error-message">{configError}</p>}
+          {!configLoading && !configError && config && (
             <Routes>
               <Route path="/" element={<SearchPage config={config} />} />
               <Route path="/document/:docId" element={<DocumentPage />} />
             </Routes>
+          )}
+        </div>
 
-            <SettingsModal
-              isOpen={isSettingsOpen}
-              onClose={() => setIsSettingsOpen(false)}
-              config={config}
-              onConfigUpdate={handleConfigUpdate}
-            />
-
-            <DirectorySetupModal
-              isOpen={isDirectorySetupOpen}
-              onClose={() => setIsDirectorySetupOpen(false)}
-              onDirectoryAdded={handleDirectoryAdded}
-            />
+        {!configLoading && !configError && config && (
+          <>
+            <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} config={config} onConfigUpdate={handleConfigUpdate} />
+            <DirectorySetupModal isOpen={isDirectorySetupOpen} onClose={() => setIsDirectorySetupOpen(false)} onDirectoryAdded={handleDirectoryAdded} />
           </>
         )}
       </div>
