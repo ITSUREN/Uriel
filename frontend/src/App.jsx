@@ -45,7 +45,6 @@ function App() {
 
   return (
     <BrowserRouter>
-      // App.jsx
       <div className="app">
         <div className="app-content">
           <Header onSettingsClick={() => setIsSettingsOpen(true)} />
