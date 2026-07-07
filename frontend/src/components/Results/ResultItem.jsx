@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { openFileBestEffort, copyPathToClipboard } from "../../utils/fileOpen";
+import { IconExternal, IconCopy } from "../Icons";
 import "./ResultItem.css";
 
 function ResultItem({ result }) {
@@ -26,12 +27,12 @@ function ResultItem({ result }) {
   };
 
   return (
-    <div
-      className="result-card"
-      onClick={() => navigate(`/document/${doc_id}`)}
-    >
-      <h3 className="result-title">{title}</h3>
-      <span className="result-score-badge">{score.toFixed(3)}</span>
+    <div className="result-card" onClick={() => navigate(`/document/${doc_id}`)}>
+      <div className="result-card-header">
+        <h3 className="result-title">{title}</h3>
+        <span className="result-score-badge">{score.toFixed(3)}</span>
+      </div>
+
       <p
         className="result-snippet"
         dangerouslySetInnerHTML={{ __html: snippet }}
@@ -39,15 +40,26 @@ function ResultItem({ result }) {
       <p className="result-path">{path}</p>
 
       <div className="result-actions">
-        <button className="result-action-button" onClick={handleOpen}>
-          Open File
+        <button
+          className="icon-button"
+          onClick={handleOpen}
+          title="Open file"
+          aria-label="Open file"
+        >
+          <IconExternal size={15} />
         </button>
-        <button className="result-action-button" onClick={handleCopy}>
-          {copied ? "Copied!" : "Copy Path"}
+        <button
+          className="icon-button"
+          onClick={handleCopy}
+          title="Copy path"
+          aria-label="Copy path"
+        >
+          <IconCopy size={15} />
         </button>
+        {copied && <span className="result-action-note">Copied</span>}
         {openStatus === "copied" && (
           <span className="result-action-note">
-            Browser blocked direct opening — path copied instead.
+            Browser blocked opening this file — path copied instead.
           </span>
         )}
         {openStatus === "failed" && (

@@ -1,5 +1,6 @@
 import { useState, useEffect, forwardRef, useImperativeHandle } from "react";
 import { searchDocuments } from "../../services/api";
+import { IconSearch } from "../Icons";
 import "./SearchBar.css";
 
 function escapeRegExp(value) {
@@ -69,37 +70,53 @@ const SearchBar = forwardRef(function SearchBar(
 
   return (
     <form className="search-form" onSubmit={handleSubmit}>
-      <input
-        className="search-input"
-        type="text"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        placeholder="Enter search query"
-      />
+      <div className="search-input-wrap">
+        <IconSearch size={16} className="search-input-icon" />
+        <input
+          className="search-input"
+          type="text"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search your documents"
+        />
+      </div>
 
-      <select
-        className="search-algorithm"
-        value={algorithm}
-        onChange={(e) => setAlgorithm(e.target.value)}
-      >
-        <option value="bm25">bm25</option>
-        <option value="tfidf">tfidf</option>
-      </select>
+      <div className="search-segmented" role="group" aria-label="Ranking algorithm">
+        <button
+          type="button"
+          className={`search-segment ${algorithm === "bm25" ? "is-active" : ""}`}
+          onClick={() => setAlgorithm("bm25")}
+        >
+          BM25
+        </button>
+        <button
+          type="button"
+          className={`search-segment ${algorithm === "tfidf" ? "is-active" : ""}`}
+          onClick={() => setAlgorithm("tfidf")}
+        >
+          TF-IDF
+        </button>
+      </div>
 
       <input
         className="search-topk"
         type="number"
         value={topK}
         onChange={(e) => setTopK(Number(e.target.value))}
+        title="Number of results"
+        aria-label="Number of results"
       />
 
-      <label className="search-checkbox-label">
-        <input
-          type="checkbox"
-          checked={expandQuery}
-          onChange={(e) => setExpandQuery(e.target.checked)}
-        />
-        Expand Query
+      <label className="search-toggle">
+        <span className="toggle-switch">
+          <input
+            type="checkbox"
+            checked={expandQuery}
+            onChange={(e) => setExpandQuery(e.target.checked)}
+          />
+          <span className="toggle-slider" />
+        </span>
+        Expand query
       </label>
 
       <button className="search-button" type="submit">

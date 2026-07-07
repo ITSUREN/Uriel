@@ -1,62 +1,46 @@
-:root {
-  --color-bg: #f4f5f9;
-  --color-surface: #ffffff;
-  --color-primary: #4f46e5;
-  --color-primary-hover: #4338ca;
-  --color-primary-light: #eef2ff;
-  --color-text: #1f2937;
-  --color-text-muted: #6b7280;
-  --color-border: #e5e7eb;
-  --color-danger: #dc2626;
-  --color-danger-bg: #fef2f2;
-  --color-success: #16a34a;
-  --color-success-bg: #f0fdf4;
-  --color-warning-bg: #fffbeb;
-  --color-warning-text: #92400e;
-  --color-warning-border: #fde68a;
-
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 16px;
-
-  --shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.06);
-  --shadow-md: 0 4px 14px rgba(16, 24, 40, 0.08);
-  --shadow-lg: 0 12px 32px rgba(16, 24, 40, 0.16);
-}
-
-* {
-  box-sizing: border-box;
-}
-
 .app {
+  position: relative;
   min-height: 100vh;
-  background-color: var(--color-bg);
-  font-family:
-    "Inter",
-    system-ui,
-    -apple-system,
-    "Segoe UI",
-    sans-serif;
-  color: var(--color-text);
+  background: var(--bg);
+  overflow-x: hidden;
+  font-family: var(--font-sans);
+  color: var(--text);
+}
+
+.app::before {
+  content: "";
+  position: fixed;
+  inset: -20% -10% auto -10%;
+  height: 60vh;
+  background:
+    radial-gradient(40% 50% at 20% 0%, var(--bg-glow-a), transparent 70%),
+    radial-gradient(35% 45% at 85% 10%, var(--bg-glow-b), transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.app > * {
+  position: relative;
+  z-index: 1;
 }
 
 .status-message {
   max-width: 900px;
-  margin: 1rem auto 0 auto;
+  margin: 1.25rem auto 0 auto;
   padding: 0 1.75rem;
-  color: var(--color-text-muted);
+  color: var(--text-muted);
   font-size: 0.95rem;
 }
 
 .error-message {
   max-width: 900px;
-  margin: 1rem auto 0 auto;
-  padding: 0.85rem 1rem;
-  background-color: var(--color-danger-bg);
-  color: var(--color-danger);
-  border: 1px solid #fecaca;
-  border-radius: var(--radius-sm);
-  font-size: 0.95rem;
+  margin: 1.25rem auto 0 auto;
+  padding: 0.85rem 1.1rem;
+  background: var(--danger-soft);
+  color: var(--danger);
+  border: 1px solid var(--danger-border);
+  border-radius: var(--radius-md);
+  font-size: 0.92rem;
 }
 
 .spelling-correction {
@@ -67,22 +51,22 @@
   max-width: 900px;
   margin: 0.85rem auto 0 auto;
   padding: 0 1.75rem;
-  color: var(--color-text-muted);
+  color: var(--text-muted);
   font-size: 0.9rem;
 }
 
 .spelling-correction-link {
-  padding: 0.3rem 0.75rem;
+  padding: 0.3rem 0.8rem;
   font-size: 0.85rem;
   font-weight: 500;
-  color: var(--color-primary);
-  background-color: var(--color-primary-light);
-  border: 1px solid transparent;
-  border-radius: 999px;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-border);
+  border-radius: var(--radius-full);
   cursor: pointer;
   transition: background-color 0.15s ease;
 }
 
 .spelling-correction-link:hover {
-  background-color: #e0e7ff;
+  background: rgba(108, 140, 255, 0.24);
 }

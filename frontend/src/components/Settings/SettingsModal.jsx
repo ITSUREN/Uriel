@@ -8,6 +8,7 @@ import {
   addDirectory,
   removeDirectory,
 } from "../../services/api";
+import { IconTrash, IconPlus, IconRefresh } from "../Icons";
 import "./SettingsModal.css";
 
 function SettingsModal({ isOpen, onClose, config, onConfigUpdate }) {
@@ -145,6 +146,7 @@ function SettingsModal({ isOpen, onClose, config, onConfigUpdate }) {
   const handleRemoveDirectory = (dirId) => {
     setRemovingDirId(dirId);
     setRemoveDirError(null);
+
     removeDirectory(dirId)
       .then(() => {
         onConfigUpdate({
@@ -164,118 +166,109 @@ function SettingsModal({ isOpen, onClose, config, onConfigUpdate }) {
       });
   };
 
-  const isEqual = (a,b) => JSON.stringify(a) === JSON.stringify(b);
+  const isEqual = (a, b) => JSON.stringify(a) === JSON.stringify(b);
   const hasChanges =
     preprocessingForm &&
     rankingForm &&
     queryExpansionForm &&
-    (
-      !isEqual(preprocessingForm, config.preprocessing) ||
+    (!isEqual(preprocessingForm, config.preprocessing) ||
       !isEqual(rankingForm, config.ranking) ||
-      !isEqual(queryExpansionForm, config.query_expansion)
-    );
+      !isEqual(queryExpansionForm, config.query_expansion));
 
-const handleSave = async () => {
-  setSaving(true);
-  setSaveError(null);
-  setSaveSuccess(false);
-  setReindexMessage(null);
-
-  try {
-    const preprocessingChanged = !isEqual(
-      preprocessingForm,
-      config.preprocessing
-    );
-
-    const rankingChanged = !isEqual(
-      rankingForm,
-      config.ranking
-    );
-
-    const queryExpansionChanged = !isEqual(
-      queryExpansionForm,
-      config.query_expansion
-    );
-
-    if (
-      !preprocessingChanged &&
-      !rankingChanged &&
-      !queryExpansionChanged
-    ) {
-      onClose();
-      return;
-    }
-
-    let updatedPreprocessing = config.preprocessing;
-    let updatedRanking = config.ranking;
-    let updatedQueryExpansion = config.query_expansion;
-
-    if (preprocessingChanged) {
-      const res = await updatePreprocessingConfig(preprocessingForm);
-
-      updatedPreprocessing = res.data.config.preprocessing;
-
-      if (res.data.reindex_required) {
-        setReindexMessage(res.data.message);
-      }
-    }
-
-    if (rankingChanged) {
-      const res = await updateRankingConfig(rankingForm);
-      updatedRanking = res.data.config.ranking;
-    }
-
-    if (queryExpansionChanged) {
-      const res = await updateQueryExpansionConfig(queryExpansionForm);
-      updatedQueryExpansion = res.data.config.query_expansion;
-    }
-
-    setPreprocessingForm(updatedPreprocessing);
-    setRankingForm(updatedRanking);
-    setQueryExpansionForm(updatedQueryExpansion);
-
-    onConfigUpdate({
-      ...config,
-      preprocessing: updatedPreprocessing,
-      ranking: updatedRanking,
-      query_expansion: updatedQueryExpansion,
-    });
-
-    setSaveSuccess(true);
-    setTimeout(() => setSaveSuccess(false), 3000);
-    if (preprocessingChanged) {
-        // keep modal open so the user can rebuild
-    } else {
-        onClose();
-    }
-  } catch (err) {
-    setSaveError(err.message);
-  } finally {
-    setSaving(false);
-  }
-};
-
-const handleRebuild = async () => {
-  setRebuilding(true);
-
-  try {
-    const response = await rebuildIndex();
-
-    setRebuildSuccess(
-      `Index rebuilt successfully. ${response.data.reindexed} documents were indexed.`
-    );
-
+  const handleSave = async () => {
+    setSaving(true);
+    setSaveError(null);
+    setSaveSuccess(false);
     setReindexMessage(null);
-    setRebuildSuccess('Index rebuilt successfully.');
 
-    const statsResponse = await getIndexStats();
-    setStats(statsResponse.data);
-  } catch (err) {
-    setSaveError(err.message);
-  } finally {
-    setRebuilding(false);
-  }
-};
+    try {
+      const preprocessingChanged = !isEqual(
+        preprocessingForm,
+        config.preprocessing
+      );
+
+      const rankingChanged = !isEqual(rankingForm, config.ranking);
+
+      const queryExpansionChanged = !isEqual(
+        queryExpansionForm,
+        config.query_expansion
+      );
+
+      if (!preprocessingChanged && !rankingChanged && !queryExpansionChanged) {
+        onClose();
+        return;
+      }
+
+      let updatedPreprocessing = config.preprocessing;
+      let updatedRanking = config.ranking;
+      let updatedQueryExpansion = config.query_expansion;
+
+      if (preprocessingChanged) {
+        const res = await updatePreprocessingConfig(preprocessingForm);
+        updatedPreprocessing = res.data.config.preprocessing;
+        if (res.data.reindex_required) {
+          setReindexMessage(res.data.message);
+        }
+      }
+
+      if (rankingChanged) {
+        const res = await updateRankingConfig(rankingForm);
+        updatedRanking = res.data.config.ranking;
+      }
+
+      if (queryExpansionChanged) {
+        const res = await updateQueryExpansionConfig(queryExpansionForm);
+        updatedQueryExpansion = res.data.config.query_expansion;
+      }
+
+      setPreprocessingForm(updatedPreprocessing);
+      setRankingForm(updatedRanking);
+      setQueryExpansionForm(updatedQueryExpansion);
+
+      onConfigUpdate({
+        ...config,
+        preprocessing: updatedPreprocessing,
+        ranking: updatedRanking,
+        query_expansion: updatedQueryExpansion,
+      });
+
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+      if (preprocessingChanged) {
+        // keep modal open so the user can rebuild
+      } else {
+        onClose();
+      }
+    } catch (err) {
+      setSaveError(err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleRebuild = async () => {
+    setRebuilding(true);
+
+    try {
+      const response = await rebuildIndex();
+
+      setReindexMessage(null);
+      // NOTE: previously this message was set with the reindexed count, then
+      // immediately overwritten by a second, generic setRebuildSuccess call
+      // right below it — the count was computed and thrown away. Fixed to
+      // keep the informative version.
+      setRebuildSuccess(
+        `Index rebuilt successfully. ${response.data.reindexed} documents were indexed.`
+      );
+
+      const statsResponse = await getIndexStats();
+      setStats(statsResponse.data);
+    } catch (err) {
+      setSaveError(err.message);
+    } finally {
+      setRebuilding(false);
+    }
+  };
 
   return (
     <div className="settings-backdrop" onClick={onClose}>
@@ -287,9 +280,7 @@ const handleRebuild = async () => {
           </button>
         </div>
 
-        {statsLoading && (
-          <p className="settings-status">Loading settings...</p>
-        )}
+        {statsLoading && <p className="settings-status">Loading settings...</p>}
         {statsError && <p className="settings-error">{statsError}</p>}
 
         {!statsLoading &&
@@ -324,10 +315,7 @@ const handleRebuild = async () => {
                       className="settings-select"
                       value={preprocessingForm.spacy_model}
                       onChange={(e) =>
-                        handlePreprocessingChange(
-                          "spacy_model",
-                          e.target.value
-                        )
+                        handlePreprocessingChange("spacy_model", e.target.value)
                       }
                     >
                       <option value="en_core_web_sm">en_core_web_sm</option>
@@ -341,10 +329,7 @@ const handleRebuild = async () => {
                         type="checkbox"
                         checked={preprocessingForm.lowercase}
                         onChange={(e) =>
-                          handlePreprocessingChange(
-                            "lowercase",
-                            e.target.checked
-                          )
+                          handlePreprocessingChange("lowercase", e.target.checked)
                         }
                       />
                       <span className="toggle-slider"></span>
@@ -386,9 +371,7 @@ const handleRebuild = async () => {
                       <input
                         type="checkbox"
                         checked={preprocessingForm.use_stemming}
-                        onChange={(e) =>
-                          handleStemmingToggle(e.target.checked)
-                        }
+                        onChange={(e) => handleStemmingToggle(e.target.checked)}
                       />
                       <span className="toggle-slider"></span>
                     </label>
@@ -438,10 +421,7 @@ const handleRebuild = async () => {
                       className="settings-select"
                       value={rankingForm.default_algorithm}
                       onChange={(e) =>
-                        handleRankingChange(
-                          "default_algorithm",
-                          e.target.value
-                        )
+                        handleRankingChange("default_algorithm", e.target.value)
                       }
                     >
                       <option value="bm25">bm25</option>
@@ -587,9 +567,7 @@ const handleRebuild = async () => {
 
                   <div className="settings-row">
                     <label>Indexed Documents</label>
-                    <span className="settings-static-value">
-                      {stats.documents}
-                    </span>
+                    <span className="settings-static-value">{stats.documents}</span>
                   </div>
 
                   <div className="settings-row">
@@ -603,23 +581,23 @@ const handleRebuild = async () => {
                 <section className="settings-section">
                   <h3>Watched Directories</h3>
                   {config.directories.length === 0 ? (
-                    <p>No directories configured.</p>
+                    <p className="settings-empty">No directories configured.</p>
                   ) : (
                     <ul className="settings-directory-list">
                       {config.directories.map((dir) => (
                         <li key={dir.id} className="settings-directory-item">
-                          <span>
+                          <span className="settings-directory-path">
                             {dir.path} {dir.is_default && "(default)"}
                           </span>
                           <button
                             type="button"
-                            className="settings-directory-remove"
+                            className="icon-button is-danger"
                             onClick={() => handleRemoveDirectory(dir.id)}
                             disabled={removingDirId === dir.id}
+                            title="Remove directory"
+                            aria-label="Remove directory"
                           >
-                            {removingDirId === dir.id
-                              ? "Removing..."
-                              : "Remove"}
+                            <IconTrash size={14} />
                           </button>
                         </li>
                       ))}
@@ -642,24 +620,28 @@ const handleRebuild = async () => {
                     />
                     <button
                       type="submit"
-                      className="settings-add-directory-button"
+                      className="icon-button"
                       disabled={addingDir || !newDirPath.trim()}
+                      title="Add directory"
+                      aria-label="Add directory"
                     >
-                      {addingDir ? "Adding..." : "Add"}
+                      {addingDir ? (
+                        <IconRefresh size={14} className="spin" />
+                      ) : (
+                        <IconPlus size={14} />
+                      )}
                     </button>
                   </form>
-                  {addDirError && (
-                    <p className="settings-error">{addDirError}</p>
-                  )}
+                  {addDirError && <p className="settings-error">{addDirError}</p>}
                 </section>
               </div>
 
               {reindexMessage && (
                 <div className="settings-reindex">
-                  <p className="settings-reindex-message">
-                    {reindexMessage}
-                  </p>
-
+                  <span className="settings-reindex-icon">
+                    <IconRefresh size={14} />
+                  </span>
+                  <p className="settings-reindex-message">{reindexMessage}</p>
                   <button
                     className="settings-rebuild-button"
                     onClick={handleRebuild}
@@ -669,8 +651,8 @@ const handleRebuild = async () => {
                   </button>
                 </div>
               )}
-              {rebuildSuccess && (<p className="settings-success">{rebuildSuccess}</p>)}
-              {saveSuccess && (<p className="settings-success">✓ Settings saved successfully.</p>)}
+              {rebuildSuccess && <p className="settings-success">{rebuildSuccess}</p>}
+              {saveSuccess && <p className="settings-success">Settings saved.</p>}
               {saveError && <p className="settings-error">{saveError}</p>}
 
               <div className="settings-footer">
@@ -688,11 +670,7 @@ const handleRebuild = async () => {
                   onClick={handleSave}
                   disabled={saving || !hasChanges}
                 >
-                  {saving 
-                    ? "Saving..." 
-                      : hasChanges
-                        ? "Save Changes"
-                        : "No Changes"}
+                  {saving ? "Saving..." : hasChanges ? "Save Changes" : "No Changes"}
                 </button>
               </div>
             </>
