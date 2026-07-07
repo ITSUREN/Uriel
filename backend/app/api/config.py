@@ -46,3 +46,8 @@ def delete_directory(dir_id: int, svc: ConfigService = Depends(get_config_servic
         raise HTTPException(status_code=403, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
+    
+# backend/app/api/config.py
+@router.put("/onboarding/complete")
+def complete_onboarding(svc: ConfigService = Depends(get_config_service)):
+    return svc.mark_onboarding_complete()["onboarding"]
