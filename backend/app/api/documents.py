@@ -1,6 +1,9 @@
 #backend/app/api/documents.py
 from fastapi import APIRouter, Depends, HTTPException, Query
 from backend.app.schemas.document import DocumentReponse, BrowseResponse
+from starlette.responses import FileResponse
+from pathlib import Path
+import mimetypes
 from backend.app.schemas.search import SearchResponse
 from backend.app.services.document_service import DirectoryBrowseError, DocumentService
 from backend.app.services.search_service import SearchService
@@ -51,3 +54,27 @@ def related_documents(doc_id: int, top_k: int = 5, svc: SearchService = Depends(
         SearchResponse(doc_id=r.doc_id, score=r.score, snippet=r.snippet, title=r.title, path=r.path)
         for r in results
     ]
+
+@router.get("/{doc_id}/file")
+def get_document_file(doc_id: int, svc: DocumentService = Depends(get_document_service)):
+    """
+    Streams the original file (PDF or TXT) exactly as it exists on disk, so
+    the frontend can render it in a native/browser PDF viewer or <iframe>
+    instead of relying on the parsed text, which has no formatting.
+    """
+    doc = svc.get_document(doc_id)
+    if doc is None:
+        raise HTTPException(status_code=404, detail=f"Document with ID {doc_id} not found.")
+
+    path = Path(doc.path)
+    if not path.is_file():
+        raise HTTPException(status_code=404, detail="File no longer exists on disk.")
+
+    media_type, _ = mimetypes.guess_type(str(path))
+    media_type = media_type or "application/octet-stream"
+
+    response = FileResponse(path, media_type=media_type)
+    # Explicitly "inline" (not "attachment") — this is what lets a PDF render
+    # inside an <iframe>/<embed> instead of triggering a download prompt.
+    response.headers["Content-Disposition"] = f'inline; filename="{path.name}"'
+    return response
