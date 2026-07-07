@@ -12,7 +12,7 @@ function ResultItem({ result }) {
 
   const handleOpen = async (e) => {
     e.stopPropagation();
-    const status = await openFileBestEffort(path);
+    const status = await openFileBestEffort(doc_id);
     setOpenStatus(status);
     setTimeout(() => setOpenStatus(null), 2500);
   };
@@ -57,16 +57,11 @@ function ResultItem({ result }) {
           <IconCopy size={15} />
         </button>
         {copied && <span className="result-action-note">Copied</span>}
-        {openStatus === "copied" && (
-          <span className="result-action-note">
-            Browser blocked opening this file — path copied instead.
-          </span>
-        )}
         {openStatus === "failed" && (
           <span className="result-action-note result-action-note-error">
-            Couldn't open or copy the path.
+            Couldn't open this file.
           </span>
-        )}
+)}
       </div>
     </div>
   );

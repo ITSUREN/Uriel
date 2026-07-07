@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { getDocument, getRelatedDocuments } from "../services/api";
 import { openFileBestEffort, copyPathToClipboard } from "../utils/fileOpen";
 import ResultsList from "../components/Results/ResultsList";
@@ -8,6 +8,7 @@ import "./DocumentPage.css";
 function DocumentPage() {
   const { docId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [docData, setDocData] = useState(null);
   const [relatedDocuments, setRelatedDocuments] = useState(null);
@@ -35,8 +36,19 @@ function DocumentPage() {
       });
   }, [docId]);
 
+  const handleBack = () => {
+    // location.key === "default" means this is the first entry in the
+    // session's history (e.g. a direct link or a refresh) — there's nothing
+    // real to go back to, so fall back to the search page.
+    if (location.key !== "default") {
+      navigate(-1);
+    } else {
+      navigate("/");
+    }
+  };
+
   const handleOpen = async () => {
-    const status = await openFileBestEffort(docData.path);
+    const status = await openFileBestEffort(docId);
     setOpenStatus(status);
     setTimeout(() => setOpenStatus(null), 2500);
   };
@@ -54,7 +66,7 @@ function DocumentPage() {
       <button
         className="back-button"
         type="button"
-        onClick={() => navigate("/")}
+        onClick={handleBack}
       >
         ← Back to Search
       </button>
@@ -79,26 +91,11 @@ function DocumentPage() {
                 {copied ? "Copied!" : "Copy Path"}
               </button>
             </div>
-            {openStatus === "copied" && (
-              <p className="document-action-note">
-                Browser blocked direct opening — path copied instead.
-              </p>
-            )}
             {openStatus === "failed" && (
               <p className="document-action-note document-action-note-error">
-                Couldn't open or copy the path.
+                Couldn't open this file.
               </p>
             )}
-          </div>
-
-          <div className="document-content-placeholder">
-            <h3>Document Content</h3>
-            <p>
-              Displaying the full text of this document requires backend
-              support that does not currently exist. The API only exposes
-              document metadata (title, path, length, last modified) — there
-              is no endpoint that returns file contents.
-            </p>
           </div>
 
           <div className="related-documents-section">

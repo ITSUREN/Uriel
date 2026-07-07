@@ -20,6 +20,10 @@ export const getDocument = (docId) => {
   return apiClient.get(`/documents/${docId}`);
 };
 
+export const buildDocumentFileUrl = (docId) => {
+  return `${apiClient.defaults.baseURL}/documents/${docId}/file`;
+};
+
 export const getIndexStats = () => {
   return apiClient.get("/index/stats");
 };
