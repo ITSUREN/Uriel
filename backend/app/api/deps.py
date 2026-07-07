@@ -1,6 +1,8 @@
 #backend/app/api/deps.py
 from functools import lru_cache
 from backend.app.config.settings import get_settings
+from backend.app.parser.pdf_parser import PDFParser
+from backend.app.parser.txt_parser import TXTParser
 from backend.app.preprocessing.config import PreprocessingConfig
 from backend.app.services.config_service import ConfigService
 from backend.app.services.document_service import DocumentService
@@ -10,6 +12,7 @@ from backend.app.services.index_service import IndexService
 from backend.app.services.search_service import SearchService
 from backend.app.preprocessing.preprocessing_factory import PreprocessingFactory
 from backend.app.query_expansion.spell_correction import SpellCorrector
+from backend.app.parser.content_provider import ContentProvider
 
 @lru_cache
 def get_repositories():
@@ -34,13 +37,19 @@ def get_config_service() -> ConfigService:
 
 def get_index_service() -> IndexService:
     doc_repo, index_repo, config_repo, directory_repo = get_repositories()
-    indexer = Indexer(doc_repo, index_repo, _current_preprocessing_config(config_repo))
+    indexer = Indexer(
+        doc_repo, index_repo, _current_preprocessing_config(config_repo),
+        pdf_max_pages=get_settings().pdf_max_pages,
+    )
     return IndexService(indexer, directory_repo, spell_corrector=get_spell_corrector())
 
 def get_search_service() -> SearchService:
     doc_repo, index_repo, config_repo, directory_repo = get_repositories()
     preprocessor = PreprocessingFactory.create(_current_preprocessing_config(config_repo))
-    return SearchService(doc_repo, index_repo, preprocessor, config_repo, spell_corrector=get_spell_corrector())
+    content_provider = ContentProvider(PDFParser(), TXTParser())
+    return SearchService(doc_repo, index_repo, preprocessor, config_repo,
+                          spell_corrector=get_spell_corrector(),
+                          content_provider=content_provider)
 
 def get_document_service() -> DocumentService:
     doc_repo, index_repo, config_repo, directory_repo = get_repositories()

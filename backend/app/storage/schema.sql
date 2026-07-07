@@ -3,8 +3,7 @@ CREATE TABLE IF NOT EXISTS documents (
     path          TEXT UNIQUE NOT NULL,
     title         TEXT NOT NULL,
     length        INTEGER NOT NULL,
-    last_modified TEXT NOT NULL,
-    content       TEXT NOT NULL DEFAULT ''  -- raw text content of the document, for snippet generation
+    last_modified TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS postings (

@@ -73,8 +73,12 @@ class DirectoryOut(BaseModel):
 class DirectoryCreate(BaseModel):
     path: str
 
+class OnboardingConfigOut(BaseModel):
+    completed: bool
+
 class AppConfigOut(BaseModel):
     preprocessing: PreprocessingConfigOut
     ranking: RankingConfigOut
     query_expansion: QueryExpansionConfigOut
+    onboarding: OnboardingConfigOut
     directories: list[DirectoryOut]

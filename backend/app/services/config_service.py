@@ -25,6 +25,9 @@ DEFAULT_CONFIG = {
             "beta": 0.75,
             "gamma": 0.15
         }
+    },
+    "onboarding": {
+        "completed": False
     }
 }
 
@@ -39,7 +42,15 @@ class ConfigService:
         self.allowed_root = Path(allowed_root).resolve() if allowed_root else None
 
     def get(self) -> dict:
-        return copy.deepcopy(self.config_repo.get() or DEFAULT_CONFIG)
+        stored = self.config_repo.get()
+        if stored is None:
+            return copy.deepcopy(DEFAULT_CONFIG)
+        # Merge so older configs saved before "onboarding" existed don't crash
+        # on a missing key, same reasoning as any additive config migration.
+        merged = copy.deepcopy(DEFAULT_CONFIG)
+        merged.update(stored)
+        merged.setdefault("onboarding", copy.deepcopy(DEFAULT_CONFIG["onboarding"]))
+        return merged
     
     def update_preprocessing(self, updates: dict) -> dict:
         current = self.get()
@@ -83,4 +94,10 @@ class ConfigService:
     
     def remove_directory(self, dir_id: int) -> None:
         self.directory_repo.delete(dir_id)
+
+    def mark_onboarding_complete(self) -> dict:
+        current = self.get()
+        current["onboarding"]["completed"] = True
+        self.config_repo.save(current)
+        return current
         
