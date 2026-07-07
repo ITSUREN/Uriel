@@ -1,18 +1,30 @@
-// Browsers cannot ask the OS to open an arbitrary local file, and there is
-// no backend endpoint for it either (confirmed against the Swagger route
-// list). A file:// link from an http(s) page is actively blocked by modern
-// browsers with a thrown SecurityError (confirmed in testing) rather than
-// just silently failing, so this must be caught. When it's blocked, we fall
-// back to copying the path to the clipboard, which always works.
+import { buildDocumentFileUrl } from "../services/api";
 
-export function buildFileUrl(path) {
-  const normalized = path.replace(/\\/g, "/");
-  const encoded = normalized
-    .split("/")
-    .map((segment) => encodeURIComponent(segment))
-    .join("/");
-  const withLeadingSlash = encoded.startsWith("/") ? encoded : `/${encoded}`;
-  return `file://${withLeadingSlash}`;
+// Returns "opened" | "failed". Fetches the file as a GET (no HEAD probe —
+// some backends don't support HEAD on GET-only routes), converts it to a
+// blob, and opens an object URL for that blob. This still triggers the
+// browser's native PDF/text viewer, and lets us actually confirm success
+// instead of guessing from window.open's return value.
+export async function openFileBestEffort(docId) {
+  const url = buildDocumentFileUrl(docId);
+
+  try {
+    const res = await fetch(url);
+    if (!res.ok) {
+      return "failed";
+    }
+
+    const blob = await res.blob();
+    const objectUrl = URL.createObjectURL(blob);
+    window.open(objectUrl, "_blank");
+
+    // Revoke after a delay so the new tab has time to load it first.
+    setTimeout(() => URL.revokeObjectURL(objectUrl), 10000);
+
+    return "opened";
+  } catch {
+    return "failed";
+  }
 }
 
 export async function copyPathToClipboard(path) {
@@ -22,21 +34,4 @@ export async function copyPathToClipboard(path) {
   } catch {
     return false;
   }
-}
-
-// AFTER (corrected)
-// Returns "copied" | "failed". window.open() throws synchronously here with
-// a SecurityError when blocking file:// navigation from an http(s) page —
-// confirmed by testing — so we must catch it. We still never report
-// "opened": even in cases where no exception is thrown, we can't confirm
-// the file actually launched, so clipboard copy is the only outcome we
-// can verify and report on.
-export async function openFileBestEffort(path) {
-  try {
-    window.open(buildFileUrl(path), "_blank");
-  } catch {
-    // expected — browser blocked file:// navigation, fall through to clipboard
-  }
-  const copied = await copyPathToClipboard(path);
-  return copied ? "copied" : "failed";
 }

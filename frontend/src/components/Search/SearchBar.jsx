@@ -1,4 +1,5 @@
-import { useState, useEffect, forwardRef, useImperativeHandle } from "react";
+import { useState, useEffect, useRef, forwardRef, useImperativeHandle } from "react";
+import { useSearchParams } from "react-router-dom";
 import { searchDocuments } from "../../services/api";
 import { IconSearch } from "../Icons";
 import "./SearchBar.css";
@@ -11,12 +12,27 @@ const SearchBar = forwardRef(function SearchBar(
   { config, onResults, onError, onLoadingChange, onCorrectedTerms },
   ref
 ) {
-  const [query, setQuery] = useState("");
-  const [algorithm, setAlgorithm] = useState(config.ranking.default_algorithm);
-  const [topK, setTopK] = useState(config.ranking.default_top_k);
-  const [expandQuery, setExpandQuery] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
 
+  const [query, setQuery] = useState(searchParams.get("q") || "");
+  const [algorithm, setAlgorithm] = useState(
+    searchParams.get("algorithm") || config.ranking.default_algorithm
+  );
+  const [topK, setTopK] = useState(
+    searchParams.get("top_k")
+      ? Number(searchParams.get("top_k"))
+      : config.ranking.default_top_k
+  );
+  const [expandQuery, setExpandQuery] = useState(
+    searchParams.get("expand") === "true"
+  );
+
+  const isFirstConfigSync = useRef(true);
   useEffect(() => {
+    if (isFirstConfigSync.current) {
+      isFirstConfigSync.current = false;
+      return;
+    }
     setAlgorithm(config.ranking.default_algorithm);
     setTopK(config.ranking.default_top_k);
   }, [config.ranking.default_algorithm, config.ranking.default_top_k]);
@@ -31,6 +47,13 @@ const SearchBar = forwardRef(function SearchBar(
     onLoadingChange(true);
     onError(null);
     onCorrectedTerms(null);
+
+    setSearchParams({
+      q: finalQuery,
+      algorithm,
+      top_k: String(topK),
+      expand: String(expandQuery),
+    });
 
     searchDocuments({
       query: finalQuery,
@@ -49,6 +72,16 @@ const SearchBar = forwardRef(function SearchBar(
         onLoadingChange(false);
       });
   };
+
+  // Auto-run the search once on mount if the URL already has a query —
+  // this is what makes "back to search" actually restore results, since
+  // SearchPage/SearchBar remount fresh each time.
+  useEffect(() => {
+    if (searchParams.get("q")) {
+      runSearch(searchParams.get("q"));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Exposed so SearchPage can re-run the search with corrected spelling
   // applied, without the frontend silently overriding what the user typed.
