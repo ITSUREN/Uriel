@@ -24,16 +24,19 @@ export async function copyPathToClipboard(path) {
   }
 }
 
-// Returns "opened" | "copied" | "failed" so the caller can show the right message.
+// AFTER (corrected)
+// Returns "copied" | "failed". window.open() throws synchronously here with
+// a SecurityError when blocking file:// navigation from an http(s) page —
+// confirmed by testing — so we must catch it. We still never report
+// "opened": even in cases where no exception is thrown, we can't confirm
+// the file actually launched, so clipboard copy is the only outcome we
+// can verify and report on.
 export async function openFileBestEffort(path) {
   try {
-    const win = window.open(buildFileUrl(path), "_blank");
-    if (!win) {
-      throw new Error("popup blocked");
-    }
-    return "opened";
+    window.open(buildFileUrl(path), "_blank");
   } catch {
-    const copied = await copyPathToClipboard(path);
-    return copied ? "copied" : "failed";
+    // expected — browser blocked file:// navigation, fall through to clipboard
   }
+  const copied = await copyPathToClipboard(path);
+  return copied ? "copied" : "failed";
 }

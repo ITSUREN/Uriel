@@ -25,7 +25,7 @@ function DocumentPage() {
     Promise.all([getDocument(docId), getRelatedDocuments(docId)])
       .then(([docResponse, relatedResponse]) => {
         setDocData(docResponse.data);
-        setRelatedDocuments(relatedResponse.data);
+        setRelatedDocuments(relatedResponse.data.results ?? relatedResponse.data);
       })
       .catch((err) => {
         setError(err.message);

@@ -129,6 +129,9 @@ function SettingsModal({ isOpen, onClose, config, onConfigUpdate }) {
           directories: [...config.directories, response.data],
         });
         setNewDirPath("");
+        setReindexMessage(
+          "A new directory was added. Rebuild the index to make its documents searchable."
+        );
       })
       .catch((err) => {
         const detail = err.response?.data?.detail;
@@ -142,13 +145,15 @@ function SettingsModal({ isOpen, onClose, config, onConfigUpdate }) {
   const handleRemoveDirectory = (dirId) => {
     setRemovingDirId(dirId);
     setRemoveDirError(null);
-
     removeDirectory(dirId)
       .then(() => {
         onConfigUpdate({
           ...config,
           directories: config.directories.filter((dir) => dir.id !== dirId),
         });
+        setReindexMessage(
+          "A directory was removed. Rebuild the index to remove its documents from search results."
+        );
       })
       .catch((err) => {
         const detail = err.response?.data?.detail;
