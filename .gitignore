@@ -1,5 +1,7 @@
 devjournal/
 .env
 .venv
-__pycache__
-uriel.db.pytest_cache/ 
+backend/app/data/
+__pycache__/
+.pytest_cache/ 
+backend/analysis/output
