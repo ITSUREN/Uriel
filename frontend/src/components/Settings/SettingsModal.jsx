@@ -1,10 +1,12 @@
+//src/components/Setings/SettingsModal.jsx
 import { useState, useEffect } from "react";
 import {
   getIndexStats,
+  getIndexStatus,
+  rebuildIndex,
   updatePreprocessingConfig,
   updateRankingConfig,
   updateQueryExpansionConfig,
-  rebuildIndex,
   addDirectory,
   removeDirectory,
 } from "../../services/api";
@@ -253,19 +255,42 @@ function SettingsModal({ isOpen, onClose, config, onConfigUpdate }) {
     }
   };
 
+  const pollUntilDone = () => {
+    return new Promise((resolve, reject) => {
+      const check = () => {
+        getIndexStatus()
+          .then((res) => {
+            if (res.data.state === "running") {
+              setTimeout(check, 1000);
+            } else if (res.data.state === "error") {
+              reject(new Error(res.data.error || "Indexing failed"));
+            } else {
+              resolve(res.data);
+            }
+          })
+          .catch(reject);
+      };
+      check();
+    });
+  };
+
   const handleRebuild = async () => {
     setRebuilding(true);
-
     try {
-      const response = await rebuildIndex();
+      const startResp = await rebuildIndex();
+      if (startResp.data.status !== "started") {
+        throw new Error("Failed to start rebuild.");
+      }
 
       setReindexMessage(null);
+      const finalStatus = await pollUntilDone();
       // NOTE: previously this message was set with the reindexed count, then
       // immediately overwritten by a second, generic setRebuildSuccess call
       // right below it — the count was computed and thrown away. Fixed to
       // keep the informative version.
       setRebuildSuccess(
-        `Index rebuilt successfully. ${response.data.reindexed} documents were indexed.`
+        `Index rebuilt successfully. ${finalStatus.indexed_files} documents indexed` +
+          (finalStatus.skipped.length ? `, ${finalStatus.skipped.length} skipped.` : ".")
       );
 
       const statsResponse = await getIndexStats();

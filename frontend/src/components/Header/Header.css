@@ -40,6 +40,15 @@
   box-shadow: 0 0 0 3px var(--success-soft);
 }
 
+.header-status-dot.is-busy {
+  background-color: #f59f00;
+  animation: pulse 1.2s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
 .settings-button {
   display: inline-flex;
   align-items: center;

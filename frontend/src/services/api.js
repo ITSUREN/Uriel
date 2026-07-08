@@ -68,6 +68,14 @@ export const updateQueryExpansionConfig = (data) => {
   return apiClient.put("/config/query-expansion", data);
 };
 
+export const buildIndex = () => {
+  return apiClient.post("/index/build");
+};
+
+export const getIndexStatus = () => {
+  return apiClient.get("/index/status");
+};
+
 export const rebuildIndex = () => {
   return apiClient.post("/index/rebuild");
 };
