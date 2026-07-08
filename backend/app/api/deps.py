@@ -8,6 +8,7 @@ from backend.app.services.config_service import ConfigService
 from backend.app.services.document_service import DocumentService
 from backend.app.storage.factory import build_repositories
 from backend.app.index.indexer import Indexer
+from backend.app.index.progress import IndexProgressTracker
 from backend.app.services.index_service import IndexService
 from backend.app.services.search_service import SearchService
 from backend.app.preprocessing.preprocessing_factory import PreprocessingFactory
@@ -27,6 +28,10 @@ def get_spell_corrector() -> SpellCorrector:
     # needs to persist has to live in its own cached provider like this one.
     return SpellCorrector()
 
+@lru_cache
+def get_index_progress_tracker() -> IndexProgressTracker:
+    return IndexProgressTracker();
+
 def _current_preprocessing_config(config_repo) -> PreprocessingConfig:
     _, _, _, directory_repo = get_repositories()
     return PreprocessingConfig(**ConfigService(config_repo, directory_repo).get()["preprocessing"])
@@ -41,7 +46,11 @@ def get_index_service() -> IndexService:
         doc_repo, index_repo, _current_preprocessing_config(config_repo),
         pdf_max_pages=get_settings().pdf_max_pages,
     )
-    return IndexService(indexer, directory_repo, spell_corrector=get_spell_corrector())
+    return IndexService(
+        indexer, directory_repo,
+        spell_corrector=get_spell_corrector(),
+        progress_tracker=get_index_progress_tracker(),
+    )
 
 def get_search_service() -> SearchService:
     doc_repo, index_repo, config_repo, directory_repo = get_repositories()

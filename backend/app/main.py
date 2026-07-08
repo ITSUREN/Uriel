@@ -10,7 +10,7 @@ from backend.app.config.settings import get_settings
 async def lifespan(app: FastAPI):
     get_repositories()  # warms the shared cache: connects, applies schema, seeds default dir
     if get_settings().auto_index_on_startup:
-        get_index_service().build()
+        get_index_service().start_build_async()
     yield
 
 app = FastAPI(title="Uriel Search Engine", version="0.1.0", lifespan=lifespan)

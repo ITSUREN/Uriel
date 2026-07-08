@@ -11,8 +11,8 @@ from backend.app.models.posting import Posting
 
 from backend.app.preprocessing.config import PreprocessingConfig
 from backend.app.preprocessing.preprocessing_factory import PreprocessingFactory
-
-from backend.app.storage.base import DocumentRepository, IndexRepository  
+from backend.app.storage.base import DocumentRepository, IndexRepository 
+from backend.app.index.progress import IndexProgressTracker
 from backend.app.parser.pdf_parser import PDFParser
 from backend.app.parser.txt_parser import TXTParser
 
@@ -26,31 +26,53 @@ class Indexer:
 
         self.pdf_parser : PDFParser = PDFParser(max_pages=pdf_max_pages)
         self.txt_parser : TXTParser = TXTParser()
-
-    def index_directory(self, directory: str):
+    
+    def iter_indexable_files(self, directory: str) -> Iterator[str]:
+        """Used by IndexService to pre-count files to progress.set_totat(),
+        and internally by index_directory to avoid walking the tre twice 
+        with different logic"""
         for root, _, files in os.walk(directory):
             for file in files:
-                path = os.path.join(root, file)
-                if file.endswith(".pdf"):
-                    pages = self.pdf_parser.iter_pages(path)
-                elif file.endswith(".txt"):
-                    pages = self.txt_parser.iter_pages(path)
-                else:
-                    continue
-                # This try/except is the actual fix for the startup crash:
-                # a failure on ONE document (spaCy limit, corrupt file,
-                # OOM, whatever) is logged and skipped instead of taking
-                # the whole indexing run (and app startup) down with it.
-                try:
-                    self.index_document(path, file, pages)
-                except Exception:
-                    logger.exception("Failed to index %s — skipping this document", path)
-                    continue
+                if file.endswith(".pdf") or file.endswith(".txt"):
+                    yield os.path.join(root, file)
 
-    def index_document(self, path:str, filename:str, pages: Iterator[str]):
+    def index_directory(self, directory: str, progress: IndexProgressTracker | None = None):
+        for path in self.iter_indexable_files(directory):
+            filename = os.path.basename(path)
+            if progress:
+                progress.file_started(path)
+            
+            if self.doc_repo.exists_by_path(path):
+                if progress:
+                    progress.file_skipped(path, "already indexed")
+                continue
+
+            pages = self.pdf_parser.iter_pages(path) if path.endswith(".pdf") else self.txt_parser.iter_pages(path)
+
+             # This try/except is the actual fix for the startup crash: a
+            # failure on ONE document (spaCy limit, corrupt file, OOM,
+            # whatever) is logged and skipped instead of taking the whole
+            # indexing run (and app startup) down with it.
+            try:
+                indexed = self.index_document(path, filename, pages)
+            except Exception as e:
+                logger.exception("Failed to index %s - skipping this document", path)
+                if progress:
+                    progress.file_skipped(path, f"error: {e}")
+                continue
+
+            if progress:
+                if indexed:
+                    progress.file_indexed(path)
+                else:
+                    progress.file_skipped(path, "no indexable content")
+
+    def index_document(self, path:str, filename:str, pages: Iterator[str]) -> bool:
+        """Returns True if the document was actually indexed, False if it
+        produced no tokens (e.g. empty/unreadable file)."""
         if self.doc_repo.exists_by_path(path):
-            return #or: reindex if mtime changed
-        
+            return False  # caller already checked, but keep this safe if called directly
+
         positions_map: dict[str, list[int]] = defaultdict(list)
         offset = 0
         for page_num, page_text in enumerate(pages):
@@ -71,7 +93,7 @@ class Indexer:
 
         if offset == 0:
             logger.warning("No indexable tokens produced for %s — skipping", path)
-            return
+            return False
 
         doc_id = self.doc_repo.next_id()
         doc = Document(
@@ -89,3 +111,4 @@ class Indexer:
         ]
         self.index_repo.add_postings_bulk(entries)
         self.index_repo.add_document_terms(doc_id, {t: len(p) for t, p in positions_map.items()})
+        return True
