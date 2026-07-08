@@ -15,7 +15,7 @@ function Header({ onSettingsClick, settingsDisabled = false }) {
   return (
     <header className="header">
       <div className="header-brand">
-        <h1 className="header-title">Local Document Retrieval</h1>
+        <h1 className="header-title">Local Contextual Document Retrieval</h1>
         <span className="header-status">
           <span className="header-status-dot" />
           {statusText}
