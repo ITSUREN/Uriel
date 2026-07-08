@@ -24,7 +24,7 @@ echo
 echo "========================================"
 echo "Running IR metrics analysis..."
 echo "========================================"
-# python -m backend.analysis.ir_metrics
+python -m backend.analysis.ir_metrics_api
 
 echo
 echo "========================================"
