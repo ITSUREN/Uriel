@@ -1,4 +1,4 @@
-import { IconSettings } from "../Icons";
+import { IconSettings } from "../icons.jsx";
 import { useIndexProgress } from "../../hooks/useIndexProgress"
 import "./Header.css";
 

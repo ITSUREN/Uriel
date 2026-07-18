@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, forwardRef, useImperativeHandle } from "react";
 import { useSearchParams } from "react-router-dom";
 import { searchDocuments } from "../../services/api";
-import { IconSearch } from "../Icons";
+import { IconSearch } from "../icons.jsx";
 import "./SearchBar.css";
 
 function escapeRegExp(value) {

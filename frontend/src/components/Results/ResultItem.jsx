@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { openFileBestEffort, copyPathToClipboard } from "../../utils/fileOpen";
-import { IconExternal, IconCopy } from "../Icons";
+import { IconExternal, IconCopy } from "../icons.jsx";
 import "./ResultItem.css";
 
 function ResultItem({ result }) {

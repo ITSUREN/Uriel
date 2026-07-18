@@ -10,7 +10,7 @@ import {
   addDirectory,
   removeDirectory,
 } from "../../services/api";
-import { IconTrash, IconPlus, IconRefresh } from "../Icons";
+import { IconTrash, IconPlus, IconRefresh } from "../icons.jsx";
 import "./SettingsModal.css";
 
 function SettingsModal({ isOpen, onClose, config, onConfigUpdate }) {
