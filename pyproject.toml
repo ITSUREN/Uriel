@@ -5,6 +5,7 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
+    "en-core-web-sm",
     "fastapi>=0.138.2",
     "matplotlib>=3.10.9",
     "nltk>=3.9.4",
@@ -28,3 +29,6 @@ markers = [
     "integration: multiple real modules composed, no HTTP layer",
     "system: full API black-box test via TestClient",
 ]
+
+[tool.uv.sources]
+en-core-web-sm = { url = "https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl" }

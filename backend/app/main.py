@@ -1,4 +1,5 @@
 # backend/app/main.py
+import nltk
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -6,8 +7,24 @@ from backend.app.api import search, index, config as config_api, documents
 from backend.app.api.deps import get_repositories, get_index_service
 from backend.app.config.settings import get_settings
 
+REQUIRED_NLTK_RESOURCES = [
+    ("stopwords", "corpora/stopwords"),
+    ("wordnet", "corpora/wordnet"),
+]
+
+def ensure_nltk_resources() -> None:
+    for resource, path in REQUIRED_NLTK_RESOURCES:
+        try:
+            nltk.data.find(path)
+        except LookupError:
+            print(f"Downloading NLTK resources: {resource}")
+            nltk.download(resource, quiet=True)
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Ensure required nltk corpora exist
+    ensure_nltk_resources();
+    
     get_repositories()  # warms the shared cache: connects, applies schema, seeds default dir
     if get_settings().auto_index_on_startup:
         get_index_service().start_build_async()
